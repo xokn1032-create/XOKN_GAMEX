@@ -1,0 +1,500 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Opal Star Spark — Single Robotic Claw</title>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #050711;
+      color: #eaf4ff;
+      font-family: system-ui, sans-serif;
+    }
+
+    #scene {
+      position: fixed;
+      inset: 0;
+    }
+
+    .hud {
+      position: fixed;
+      top: 24px;
+      left: 25px;
+      pointer-events: none;
+    }
+
+    .hud h1 {
+      margin: 0;
+      font-size: 16px;
+      letter-spacing: 3px;
+      text-shadow: 0 0 14px #00dfff;
+    }
+
+    .hud p {
+      color: #899bbd;
+      font-size: 11px;
+      letter-spacing: 2px;
+    }
+
+    .hint {
+      position: fixed;
+      bottom: 20px;
+      width: 100%;
+      text-align: center;
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: #8997b8;
+      pointer-events: none;
+    }
+  </style>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+
+<body>
+  <div id="scene"></div>
+
+  <div class="hud">
+    <h1>OPAL STAR SPARK</h1>
+    <p>MECHANICAL APPENDAGE // SINGLE TIP 002</p>
+  </div>
+
+  <div class="hint">
+    DRAG TO ROTATE · SCROLL TO ZOOM
+  </div>
+
+  <script type="module">
+    import * as THREE from "three";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+    // ==========================================
+    // SCENE
+    // ==========================================
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x050711);
+    scene.fog = new THREE.FogExp2(0x050711, 0.025);
+
+    const camera = new THREE.PerspectiveCamera(
+      42,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      100
+    );
+
+    camera.position.set(3.5, 2.7, 6.5);
+
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true
+    });
+
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.4;
+
+    document.querySelector("#scene").appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(
+      camera,
+      renderer.domElement
+    );
+
+    controls.enableDamping = true;
+    controls.target.set(0, 0, 0.5);
+    controls.minDistance = 3;
+    controls.maxDistance = 12;
+
+    // ==========================================
+    // LIGHTS
+    // ==========================================
+
+    scene.add(new THREE.AmbientLight(0x64718f, 1.5));
+
+    const whiteLight = new THREE.PointLight(0xffffff, 55, 20);
+    whiteLight.position.set(2, 4, 5);
+    scene.add(whiteLight);
+
+    const cyanLight = new THREE.PointLight(0x00eaff, 35, 10);
+    cyanLight.position.set(-3, 1, 2);
+    scene.add(cyanLight);
+
+    const magentaLight = new THREE.PointLight(0xff00bb, 35, 10);
+    magentaLight.position.set(3, -1, 2);
+    scene.add(magentaLight);
+
+    // ==========================================
+    // MATERIALS
+    // ==========================================
+
+    const titanium = new THREE.MeshStandardMaterial({
+      color: 0x202b42,
+      metalness: 0.95,
+      roughness: 0.22
+    });
+
+    const chrome = new THREE.MeshStandardMaterial({
+      color: 0xb9c9dc,
+      metalness: 0.98,
+      roughness: 0.15
+    });
+
+    const darkMetal = new THREE.MeshStandardMaterial({
+      color: 0x080e20,
+      metalness: 0.9,
+      roughness: 0.3
+    });
+
+    const cyan = new THREE.MeshBasicMaterial({
+      color: 0x00eaff
+    });
+
+    // ==========================================
+    // MAIN ASSEMBLY
+    // ==========================================
+
+    const assembly = new THREE.Group();
+    scene.add(assembly);
+
+    const foot = new THREE.Group();
+    assembly.add(foot);
+
+    // ==========================================
+    // REAR LEG CONNECTOR
+    // ==========================================
+
+    const connector = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.32, 0.4, 0.62, 12),
+      darkMetal
+    );
+
+    connector.rotation.x = Math.PI / 2;
+    connector.position.z = -0.72;
+    foot.add(connector);
+
+    const connectorRing = new THREE.Mesh(
+      new THREE.TorusGeometry(0.34, 0.055, 10, 48),
+      chrome
+    );
+
+    connectorRing.position.z = -0.39;
+    foot.add(connectorRing);
+
+    // ==========================================
+    // CENTRAL ARMOR HOUSING
+    // ==========================================
+
+    const body = new THREE.Mesh(
+      new THREE.IcosahedronGeometry(0.56, 1),
+      titanium
+    );
+
+    body.scale.set(0.9, 0.8, 1.05);
+    body.position.z = -0.15;
+    foot.add(body);
+
+    const armorPlate = new THREE.Mesh(
+      new THREE.BoxGeometry(0.58, 0.2, 0.65),
+      chrome
+    );
+
+    armorPlate.position.set(0, 0.27, -0.18);
+    armorPlate.rotation.x = -0.2;
+    foot.add(armorPlate);
+
+    // ==========================================
+    // POWER CORE
+    // ==========================================
+
+    const powerCore = new THREE.Mesh(
+      new THREE.SphereGeometry(0.22, 32, 24),
+      new THREE.MeshBasicMaterial({
+        color: 0xff20cc
+      })
+    );
+
+    powerCore.position.set(0, 0.31, 0.13);
+    foot.add(powerCore);
+
+    const powerRing = new THREE.Mesh(
+      new THREE.TorusGeometry(0.29, 0.035, 10, 48),
+      cyan
+    );
+
+    powerRing.position.set(0, 0.31, 0.13);
+    foot.add(powerRing);
+
+    // ==========================================
+    // ARTICULATED JOINT
+    // ==========================================
+
+    const joint = new THREE.Group();
+    joint.position.set(0, 0, 0.28);
+    foot.add(joint);
+
+    const jointBall = new THREE.Mesh(
+      new THREE.SphereGeometry(0.27, 24, 20),
+      chrome
+    );
+
+    joint.add(jointBall);
+
+    const jointRing = new THREE.Mesh(
+      new THREE.TorusGeometry(0.28, 0.045, 10, 48),
+      darkMetal
+    );
+
+    jointRing.rotation.x = Math.PI / 2;
+    joint.add(jointRing);
+
+    // ==========================================
+    // SINGLE TAPERED POINT
+    // ==========================================
+
+    const spikeGeometry = new THREE.ConeGeometry(
+      0.22,
+      1.55,
+      12,
+      1
+    );
+
+    const spikeMaterial = new THREE.MeshStandardMaterial({
+      color: 0x8294b5,
+      metalness: 0.95,
+      roughness: 0.16,
+      flatShading: true
+    });
+
+    const spike = new THREE.Mesh(
+      spikeGeometry,
+      spikeMaterial
+    );
+
+    // Cone points upward by default.
+    // Rotate it to extend forward along +Z.
+    spike.rotation.x = Math.PI / 2;
+    spike.position.z = 0.98;
+    joint.add(spike);
+
+    // Reinforced base collar
+    const collar = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.27, 0.2, 0.22, 12),
+      titanium
+    );
+
+    collar.rotation.x = Math.PI / 2;
+    collar.position.z = 0.38;
+    joint.add(collar);
+
+    // Small metallic tip cap
+    const tipCap = new THREE.Mesh(
+      new THREE.SphereGeometry(0.045, 12, 10),
+      chrome
+    );
+
+    tipCap.position.z = 1.73;
+    joint.add(tipCap);
+
+    // ==========================================
+    // ENERGY CHANNEL
+    // ==========================================
+
+    const energyMaterial = new THREE.MeshBasicMaterial({
+      color: 0x00eaff
+    });
+
+    const energyChannel = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.035, 0.012, 1.05, 8),
+      energyMaterial
+    );
+
+    energyChannel.rotation.x = Math.PI / 2;
+    energyChannel.position.set(0, 0.12, 1.0);
+    joint.add(energyChannel);
+
+    // Side energy channels
+    const sideChannels = [];
+
+    for (const side of [-1, 1]) {
+      const channel = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.018, 0.008, 0.8, 8),
+        new THREE.MeshBasicMaterial({
+          color: 0xff00cc
+        })
+      );
+
+      channel.rotation.x = Math.PI / 2;
+      channel.position.set(side * 0.1, 0.09, 0.98);
+      joint.add(channel);
+      sideChannels.push(channel);
+    }
+
+    // ==========================================
+    // ARMOR BOLTS
+    // ==========================================
+
+    for (let i = 0; i < 6; i++) {
+      const angle = i / 6 * Math.PI * 2;
+
+      const bolt = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.045, 0.045, 0.07, 8),
+        chrome
+      );
+
+      bolt.position.set(
+        Math.cos(angle) * 0.43,
+        Math.sin(angle) * 0.43,
+        -0.1
+      );
+
+      foot.add(bolt);
+    }
+
+    // ==========================================
+    // RAINBOW LIGHT NODES
+    // ==========================================
+
+    const nodes = [];
+
+    for (let i = 0; i < 10; i++) {
+      const angle = i / 10 * Math.PI * 2;
+
+      const node = new THREE.Mesh(
+        new THREE.SphereGeometry(0.045, 12, 12),
+        new THREE.MeshBasicMaterial({
+          color: 0xffffff
+        })
+      );
+
+      node.position.set(
+        Math.cos(angle) * 0.42,
+        Math.sin(angle) * 0.42,
+        0.12
+      );
+
+      foot.add(node);
+      nodes.push(node);
+    }
+
+    // ==========================================
+    // BACKGROUND STARS
+    // ==========================================
+
+    const positions = [];
+
+    for (let i = 0; i < 800; i++) {
+      positions.push(
+        (Math.random() - 0.5) * 35,
+        (Math.random() - 0.5) * 25,
+        (Math.random() - 0.5) * 25
+      );
+    }
+
+    const starGeometry = new THREE.BufferGeometry();
+
+    starGeometry.setAttribute(
+      "position",
+      new THREE.Float32BufferAttribute(positions, 3)
+    );
+
+    const stars = new THREE.Points(
+      starGeometry,
+      new THREE.PointsMaterial({
+        color: 0xb7cfff,
+        size: 0.025
+      })
+    );
+
+    scene.add(stars);
+
+    // ==========================================
+    // ANIMATION
+    // ==========================================
+
+    const clock = new THREE.Clock();
+    const color = new THREE.Color();
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const t = clock.getElapsedTime();
+
+      // Whole assembly
+      assembly.rotation.y = Math.sin(t * 0.4) * 0.09;
+      assembly.rotation.x = Math.sin(t * 0.3) * 0.035;
+
+      // Subtle articulated movement
+      joint.rotation.x = Math.sin(t * 1.3) * 0.045;
+      joint.rotation.y = Math.sin(t * 0.9) * 0.055;
+
+      // Power core pulse
+      const pulse = 1 + Math.sin(t * 2.5) * 0.08;
+      powerCore.scale.setScalar(pulse);
+
+      powerRing.rotation.z = t * 0.5;
+
+      // Rainbow spectrum
+      const hue = (t * 0.12) % 1;
+
+      nodes.forEach((node, i) => {
+        node.material.color.setHSL(
+          (hue + i / nodes.length) % 1,
+          1,
+          0.6
+        );
+      });
+
+      energyMaterial.color.setHSL(hue, 1, 0.6);
+
+      sideChannels.forEach((channel, i) => {
+        channel.material.color.setHSL(
+          (hue + 0.35 + i * 0.2) % 1,
+          1,
+          0.6
+        );
+      });
+
+      cyanLight.intensity = 28 + Math.sin(t * 1.7) * 10;
+      magentaLight.intensity = 28 + Math.cos(t * 1.5) * 10;
+
+      stars.rotation.y = t * 0.006;
+
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    animate();
+
+    // ==========================================
+    // RESIZE
+    // ==========================================
+
+    window.addEventListener("resize", () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+
+      renderer.setSize(
+        window.innerWidth,
+        window.innerHeight
+      );
+
+      renderer.setPixelRatio(
+        Math.min(window.devicePixelRatio, 2)
+      );
+    });
+  </script>
+</body>
+</html>
