@@ -1,0 +1,607 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Opal Star Spark — Spider Claw 001</title>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #050711;
+      color: #eaf4ff;
+      font-family: system-ui, sans-serif;
+    }
+
+    #scene {
+      position: fixed;
+      inset: 0;
+    }
+
+    .hud {
+      position: fixed;
+      top: 24px;
+      left: 25px;
+      pointer-events: none;
+    }
+
+    .hud h1 {
+      margin: 0;
+      font-size: 16px;
+      letter-spacing: 3px;
+      text-shadow: 0 0 14px #00dfff;
+    }
+
+    .hud p {
+      color: #8798b8;
+      font-size: 11px;
+      letter-spacing: 2px;
+    }
+
+    .hint {
+      position: fixed;
+      bottom: 20px;
+      width: 100%;
+      text-align: center;
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: #8997b8;
+      pointer-events: none;
+    }
+  </style>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+
+<body>
+  <div id="scene"></div>
+
+  <div class="hud">
+    <h1>OPAL STAR SPARK</h1>
+    <p>MECHANICAL APPENDAGE // CLAW 001</p>
+  </div>
+
+  <div class="hint">
+    DRAG TO ROTATE · SCROLL TO ZOOM
+  </div>
+
+  <script type="module">
+    import * as THREE from "three";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+    // ============================================
+    // SCENE
+    // ============================================
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x050711);
+    scene.fog = new THREE.FogExp2(0x050711, 0.025);
+
+    const camera = new THREE.PerspectiveCamera(
+      42,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      100
+    );
+
+    camera.position.set(3.8, 3.0, 6.5);
+
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true
+    });
+
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.35;
+
+    document.querySelector("#scene").appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(
+      camera,
+      renderer.domElement
+    );
+
+    controls.enableDamping = true;
+    controls.target.set(0, 0, 0.35);
+    controls.minDistance = 3;
+    controls.maxDistance = 12;
+
+    // ============================================
+    // LIGHTING
+    // ============================================
+
+    scene.add(new THREE.AmbientLight(0x64718f, 1.5));
+
+    const keyLight = new THREE.PointLight(0xffffff, 55, 20);
+    keyLight.position.set(2, 4, 4);
+    scene.add(keyLight);
+
+    const cyanLight = new THREE.PointLight(0x00eaff, 35, 10);
+    cyanLight.position.set(-3, 1, 2);
+    scene.add(cyanLight);
+
+    const pinkLight = new THREE.PointLight(0xff00bb, 35, 10);
+    pinkLight.position.set(3, -1, 2);
+    scene.add(pinkLight);
+
+    // ============================================
+    // MATERIALS
+    // ============================================
+
+    const titanium = new THREE.MeshStandardMaterial({
+      color: 0x202b42,
+      metalness: 0.94,
+      roughness: 0.23
+    });
+
+    const chrome = new THREE.MeshStandardMaterial({
+      color: 0xaebed5,
+      metalness: 0.98,
+      roughness: 0.16
+    });
+
+    const blackMetal = new THREE.MeshStandardMaterial({
+      color: 0x090f20,
+      metalness: 0.85,
+      roughness: 0.3
+    });
+
+    const cyan = new THREE.MeshBasicMaterial({
+      color: 0x00efff
+    });
+
+    const rainbowMaterials = [];
+
+    // ============================================
+    // HELPER FUNCTIONS
+    // ============================================
+
+    function addCylinderBetween(
+      parent,
+      start,
+      end,
+      radiusStart,
+      radiusEnd,
+      material,
+      segments = 12
+    ) {
+      const direction = new THREE.Vector3()
+        .subVectors(end, start);
+
+      const length = direction.length();
+
+      const geometry = new THREE.CylinderGeometry(
+        radiusEnd,
+        radiusStart,
+        length,
+        segments
+      );
+
+      const mesh = new THREE.Mesh(geometry, material);
+
+      mesh.position.copy(start).add(end).multiplyScalar(0.5);
+
+      mesh.quaternion.setFromUnitVectors(
+        new THREE.Vector3(0, 1, 0),
+        direction.normalize()
+      );
+
+      parent.add(mesh);
+      return mesh;
+    }
+
+    function addJoint(parent, position, radius) {
+      const joint = new THREE.Mesh(
+        new THREE.SphereGeometry(radius, 20, 16),
+        chrome
+      );
+
+      joint.position.copy(position);
+      parent.add(joint);
+
+      const ring = new THREE.Mesh(
+        new THREE.TorusGeometry(radius * 0.85, 0.025, 8, 24),
+        cyan
+      );
+
+      ring.position.copy(position);
+      ring.rotation.x = Math.PI / 2;
+      parent.add(ring);
+
+      return joint;
+    }
+
+    function addBox(parent, size, position, material) {
+      const mesh = new THREE.Mesh(
+        new THREE.BoxGeometry(...size),
+        material
+      );
+
+      mesh.position.set(...position);
+      parent.add(mesh);
+      return mesh;
+    }
+
+    // ============================================
+    // MAIN FOOT ASSEMBLY
+    // ============================================
+
+    const claw = new THREE.Group();
+    scene.add(claw);
+
+    // Rear connection socket
+    const socket = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.48, 0.57, 0.42, 12),
+      blackMetal
+    );
+
+    socket.rotation.x = Math.PI / 2;
+    socket.position.z = -0.55;
+    claw.add(socket);
+
+    // Main foot armor
+    const footBody = new THREE.Mesh(
+      new THREE.IcosahedronGeometry(0.65, 1),
+      titanium
+    );
+
+    footBody.scale.set(1.15, 0.72, 0.7);
+    footBody.position.set(0, 0, -0.15);
+    claw.add(footBody);
+
+    // Front armor plate
+    const frontPlate = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.53, 0.61, 0.2, 12),
+      chrome
+    );
+
+    frontPlate.rotation.x = Math.PI / 2;
+    frontPlate.position.z = 0.2;
+    claw.add(frontPlate);
+
+    // Central luminous power core
+    const powerCore = new THREE.Mesh(
+      new THREE.SphereGeometry(0.25, 32, 24),
+      new THREE.MeshBasicMaterial({
+        color: 0x8a39ff
+      })
+    );
+
+    powerCore.scale.set(1, 0.85, 0.45);
+    powerCore.position.z = 0.37;
+    claw.add(powerCore);
+
+    const powerRing = new THREE.Mesh(
+      new THREE.TorusGeometry(0.34, 0.035, 10, 48),
+      cyan
+    );
+
+    powerRing.position.z = 0.38;
+    claw.add(powerRing);
+
+    // ============================================
+    // THREE ARTICULATED TOES
+    // ============================================
+
+    const toes = [];
+
+    const toeConfigs = [
+      {
+        name: "LEFT",
+        base: [-0.34, 0, 0.28],
+        bend: [-0.53, -0.12, 0.76],
+        tip: [-0.86, -0.28, 1.27],
+        color: 0x00eaff
+      },
+      {
+        name: "CENTER",
+        base: [0, 0.02, 0.3],
+        bend: [0, -0.1, 0.88],
+        tip: [0, -0.25, 1.55],
+        color: 0xff00c8
+      },
+      {
+        name: "RIGHT",
+        base: [0.34, 0, 0.28],
+        bend: [0.53, -0.12, 0.76],
+        tip: [0.86, -0.28, 1.27],
+        color: 0x8c54ff
+      }
+    ];
+
+    toeConfigs.forEach((config, index) => {
+      const toe = new THREE.Group();
+      claw.add(toe);
+
+      const base = new THREE.Vector3(...config.base);
+      const bend = new THREE.Vector3(...config.bend);
+      const tip = new THREE.Vector3(...config.tip);
+
+      // First articulated armor section
+      addCylinderBetween(
+        toe,
+        base,
+        bend,
+        0.17,
+        0.13,
+        titanium,
+        8
+      );
+
+      // Second tapered section
+      addCylinderBetween(
+        toe,
+        bend,
+        tip,
+        0.13,
+        0.025,
+        chrome,
+        8
+      );
+
+      // Joint at toe base
+      addJoint(toe, base, 0.18);
+
+      // Middle articulation joint
+      addJoint(toe, bend, 0.13);
+
+      // Pointed end cap
+      const tipMarker = new THREE.Mesh(
+        new THREE.SphereGeometry(0.045, 12, 10),
+        chrome
+      );
+
+      tipMarker.position.copy(tip);
+      toe.add(tipMarker);
+
+      // Glowing energy channel
+      const glowStart = base.clone().lerp(bend, 0.25);
+      const glowEnd = bend.clone().lerp(tip, 0.65);
+
+      const energyLine = addCylinderBetween(
+        toe,
+        glowStart,
+        glowEnd,
+        0.025,
+        0.012,
+        new THREE.MeshBasicMaterial({
+          color: config.color
+        }),
+        8
+      );
+
+      rainbowMaterials.push(energyLine.material);
+
+      // Small armor plates
+      const armor = addBox(
+        toe,
+        [0.22, 0.12, 0.2],
+        [bend.x * 0.7, bend.y + 0.1, bend.z - 0.06],
+        titanium
+      );
+
+      armor.rotation.y = index === 0 ? -0.4 : index === 2 ? 0.4 : 0;
+
+      // Tiny light at the joint
+      const jointLight = new THREE.Mesh(
+        new THREE.SphereGeometry(0.055, 12, 12),
+        new THREE.MeshBasicMaterial({
+          color: config.color
+        })
+      );
+
+      jointLight.position.copy(bend);
+      toe.add(jointLight);
+      rainbowMaterials.push(jointLight.material);
+
+      toes.push({
+        group: toe,
+        index
+      });
+    });
+
+    // ============================================
+    // CENTRAL MECHANICAL BOLTS
+    // ============================================
+
+    for (let i = 0; i < 8; i++) {
+      const angle = i / 8 * Math.PI * 2;
+
+      const bolt = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.055, 0.055, 0.08, 8),
+        chrome
+      );
+
+      bolt.position.set(
+        Math.cos(angle) * 0.43,
+        Math.sin(angle) * 0.43,
+        0.32
+      );
+
+      claw.add(bolt);
+    }
+
+    // ============================================
+    // SIDE ACTUATORS
+    // ============================================
+
+    for (let side of [-1, 1]) {
+      const actuator = new THREE.Group();
+
+      actuator.position.set(side * 0.49, 0.05, -0.08);
+      claw.add(actuator);
+
+      const piston = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.07, 0.1, 0.46, 10),
+        chrome
+      );
+
+      piston.rotation.x = Math.PI / 2;
+      piston.position.z = 0.13;
+      actuator.add(piston);
+
+      const cap = new THREE.Mesh(
+        new THREE.SphereGeometry(0.12, 16, 12),
+        titanium
+      );
+
+      cap.position.z = 0.38;
+      actuator.add(cap);
+    }
+
+    // ============================================
+    // RAINBOW LIGHT NODES
+    // ============================================
+
+    const nodes = [];
+
+    for (let i = 0; i < 12; i++) {
+      const angle = (i / 12) * Math.PI * 2;
+
+      const node = new THREE.Mesh(
+        new THREE.SphereGeometry(0.045, 12, 12),
+        new THREE.MeshBasicMaterial({
+          color: 0xffffff
+        })
+      );
+
+      node.position.set(
+        Math.cos(angle) * 0.57,
+        Math.sin(angle) * 0.57,
+        0.3
+      );
+
+      claw.add(node);
+      nodes.push(node);
+    }
+
+    // ============================================
+    // BACKGROUND STARS
+    // ============================================
+
+    const positions = [];
+
+    for (let i = 0; i < 800; i++) {
+      positions.push(
+        (Math.random() - 0.5) * 35,
+        (Math.random() - 0.5) * 25,
+        (Math.random() - 0.5) * 25
+      );
+    }
+
+    const starGeometry = new THREE.BufferGeometry();
+
+    starGeometry.setAttribute(
+      "position",
+      new THREE.Float32BufferAttribute(positions, 3)
+    );
+
+    const stars = new THREE.Points(
+      starGeometry,
+      new THREE.PointsMaterial({
+        color: 0xa7c9ff,
+        size: 0.025
+      })
+    );
+
+    scene.add(stars);
+
+    // ============================================
+    // ANIMATION
+    // ============================================
+
+    const clock = new THREE.Clock();
+    const color = new THREE.Color();
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const t = clock.getElapsedTime();
+
+      // Subtle movement of the entire foot
+      claw.rotation.y = Math.sin(t * 0.45) * 0.08;
+      claw.rotation.x = Math.sin(t * 0.35) * 0.04;
+
+      // Three toes move independently
+      toes.forEach(({ group, index }) => {
+        const phase = index * 1.2;
+
+        group.rotation.y =
+          Math.sin(t * 1.5 + phase) * 0.055;
+
+        group.rotation.x =
+          Math.sin(t * 1.2 + phase) * 0.025;
+      });
+
+      // Power core breathing
+      const pulse = 1 + Math.sin(t * 2.5) * 0.08;
+
+      powerCore.scale.set(
+        pulse,
+        pulse * 0.85,
+        0.45
+      );
+
+      powerRing.rotation.z = t * 0.5;
+
+      // Rainbow spectrum
+      const hue = (t * 0.12) % 1;
+
+      color.setHSL(hue, 1, 0.6);
+
+      nodes.forEach((node, i) => {
+        const nodeHue = (hue + i / nodes.length) % 1;
+        node.material.color.setHSL(nodeHue, 1, 0.6);
+      });
+
+      rainbowMaterials.forEach((material, i) => {
+        material.color.setHSL(
+          (hue + i * 0.08) % 1,
+          1,
+          0.58
+        );
+      });
+
+      cyanLight.intensity = 28 + Math.sin(t * 1.8) * 10;
+      pinkLight.intensity = 28 + Math.cos(t * 1.5) * 10;
+
+      stars.rotation.y = t * 0.006;
+
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    animate();
+
+    // ============================================
+    // RESIZE
+    // ============================================
+
+    window.addEventListener("resize", () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+
+      renderer.setSize(
+        window.innerWidth,
+        window.innerHeight
+      );
+
+      renderer.setPixelRatio(
+        Math.min(window.devicePixelRatio, 2)
+      );
+    });
+  </script>
+</body>
+</html>
