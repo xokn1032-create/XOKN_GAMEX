@@ -1,0 +1,790 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Opal Star Spark - Complete Spider Head</title>
+<style>
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  overflow: hidden;
+  background: #050611;
+  color: #eafaff;
+  font-family: Arial, sans-serif;
+}
+#hud {
+  position: fixed;
+  top: 18px;
+  left: 18px;
+  pointer-events: none;
+}
+h2 {
+  margin: 0;
+  font-size: 17px;
+  letter-spacing: 3px;
+  color: #b9faff;
+  text-shadow: 0 0 12px #00d9ff;
+}
+p {
+  color: #9b9bbd;
+  font-size: 11px;
+  letter-spacing: 2px;
+}
+#hint {
+  position: fixed;
+  bottom: 16px;
+  left: 18px;
+  color: #8b91b5;
+  font-size: 11px;
+}
+</style>
+</head>
+<body>
+
+<div id="hud">
+  <h2>OPAL STAR SPARK</h2>
+  <p>COMPLETE CYBERNETIC SPIDER HEAD / 001</p>
+</div>
+<div id="hint">DRAG TO ORBIT · SCROLL TO ZOOM</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from
+  "three/addons/controls/OrbitControls.js";
+
+// ============================================
+// SCENE
+// ============================================
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x050611);
+scene.fog = new THREE.FogExp2(0x050611, 0.025);
+
+const camera = new THREE.PerspectiveCamera(
+  42, innerWidth / innerHeight, 0.1, 100
+);
+camera.position.set(3.8, 2.6, 7);
+
+const renderer = new THREE.WebGLRenderer({
+  antialias: true
+});
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.2;
+document.body.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.target.set(0, -0.15, 0);
+
+// ============================================
+// LIGHTING
+// ============================================
+
+scene.add(new THREE.AmbientLight(0x9aabff, 0.8));
+
+function addLight(color, intensity, position) {
+  const light = new THREE.PointLight(color, intensity, 14);
+  light.position.set(...position);
+  scene.add(light);
+  return light;
+}
+
+addLight(0x00ddff, 35, [3, 2, 4]);
+addLight(0xff22cc, 28, [-3, 0, -2]);
+addLight(0x8b4dff, 22, [0, -3, 2]);
+
+// ============================================
+// MATERIALS
+// ============================================
+
+const titanium = new THREE.MeshStandardMaterial({
+  color: 0x718097,
+  metalness: 0.95,
+  roughness: 0.2
+});
+
+const chrome = new THREE.MeshStandardMaterial({
+  color: 0xd5e9f5,
+  metalness: 0.98,
+  roughness: 0.12
+});
+
+const darkMetal = new THREE.MeshStandardMaterial({
+  color: 0x11182a,
+  metalness: 0.9,
+  roughness: 0.3
+});
+
+const black = new THREE.MeshStandardMaterial({
+  color: 0x050a17,
+  metalness: 0.75,
+  roughness: 0.25
+});
+
+const rainbow = [
+  0xff287c,
+  0xff8b35,
+  0xffe65a,
+  0x54ffb5,
+  0x27dfff,
+  0x9b62ff
+];
+
+const glow = rainbow.map(color =>
+  new THREE.MeshStandardMaterial({
+    color,
+    emissive: color,
+    emissiveIntensity: 2,
+    metalness: 0.35,
+    roughness: 0.2
+  })
+);
+
+const opalMaterial = new THREE.MeshPhysicalMaterial({
+  color: 0xb49aff,
+  emissive: 0x5422bb,
+  emissiveIntensity: 1.8,
+  metalness: 0.3,
+  roughness: 0.1,
+  clearcoat: 1,
+  clearcoatRoughness: 0.08
+});
+
+// ============================================
+// HEAD ROOT
+// ============================================
+
+const head = new THREE.Group();
+scene.add(head);
+
+function addMesh(
+  geometry,
+  material,
+  parent,
+  position = [0, 0, 0]
+) {
+  const object = new THREE.Mesh(geometry, material);
+  object.position.set(...position);
+  parent.add(object);
+  return object;
+}
+
+function addTube(points, radius, material, parent) {
+  const curve = new THREE.CatmullRomCurve3(
+    points.map(p => new THREE.Vector3(...p))
+  );
+
+  return addMesh(
+    new THREE.TubeGeometry(curve, 48, radius, 10, false),
+    material,
+    parent
+  );
+}
+
+// ============================================
+// MAIN HEAD SHELL
+// ============================================
+
+const skull = new THREE.Group();
+head.add(skull);
+
+// Main titanium shell
+const shell = addMesh(
+  new THREE.IcosahedronGeometry(1, 3),
+  titanium,
+  skull
+);
+shell.scale.set(1.35, 0.88, 0.83);
+
+// Dark inner structure
+const innerShell = addMesh(
+  new THREE.SphereGeometry(0.9, 32, 24),
+  darkMetal,
+  skull,
+  [0, -0.02, -0.12]
+);
+innerShell.scale.set(1.35, 0.85, 0.8);
+
+// Upper forehead armor
+const brow = addMesh(
+  new THREE.BoxGeometry(2.1, 0.20, 0.42),
+  chrome,
+  skull,
+  [0, 0.53, 0.51]
+);
+brow.rotation.x = -0.12;
+
+// Forehead crest
+const crest = addMesh(
+  new THREE.OctahedronGeometry(0.43, 1),
+  darkMetal,
+  skull,
+  [0, 0.76, 0.38]
+);
+crest.scale.set(0.8, 0.8, 0.55);
+
+// ============================================
+// FOREHEAD OPAL
+// ============================================
+
+const foreheadMount = new THREE.Group();
+foreheadMount.position.set(0, 0.77, 0.76);
+skull.add(foreheadMount);
+
+addMesh(
+  new THREE.TorusGeometry(0.24, 0.06, 12, 40),
+  chrome,
+  foreheadMount
+);
+
+addMesh(
+  new THREE.TorusGeometry(0.17, 0.025, 8, 32),
+  glow[4],
+  foreheadMount,
+  [0, 0, 0.035]
+);
+
+const foreheadOpal = addMesh(
+  new THREE.IcosahedronGeometry(0.145, 2),
+  opalMaterial,
+  foreheadMount,
+  [0, 0, 0.07]
+);
+
+const foreheadLight = new THREE.PointLight(
+  0x9a45ff, 3, 3
+);
+foreheadLight.position.z = 0.35;
+foreheadMount.add(foreheadLight);
+
+// ============================================
+// THREE MECHANICAL EYES
+// ============================================
+
+const eyeAssemblies = [];
+
+function createEye(x, y, z, size, colorIndex) {
+  const eye = new THREE.Group();
+  eye.position.set(x, y, z);
+  skull.add(eye);
+
+  const s = size;
+
+  // Outer housing
+  const housing = addMesh(
+    new THREE.CylinderGeometry(
+      s * 1.12, s * 1.2, s * 0.55, 16
+    ),
+    darkMetal,
+    eye
+  );
+  housing.rotation.x = Math.PI / 2;
+
+  // Outer chrome rim
+  const outerRing = addMesh(
+    new THREE.TorusGeometry(s, s * 0.12, 12, 48),
+    chrome,
+    eye,
+    [0, 0, s * 0.30]
+  );
+
+  // Rainbow inner ring
+  const irisRing = addMesh(
+    new THREE.TorusGeometry(s * 0.76, s * 0.055, 10, 40),
+    glow[colorIndex],
+    eye,
+    [0, 0, s * 0.35]
+  );
+
+  // Lens
+  const lens = addMesh(
+    new THREE.SphereGeometry(s * 0.69, 24, 20),
+    opalMaterial,
+    eye,
+    [0, 0, s * 0.36]
+  );
+  lens.scale.z = 0.35;
+
+  // Central sensor pupil
+  const pupil = addMesh(
+    new THREE.SphereGeometry(s * 0.25, 20, 16),
+    glow[(colorIndex + 3) % 6],
+    eye,
+    [0, 0, s * 0.55]
+  );
+
+  // Six small iris nodes
+  const irisNodes = [];
+
+  for (let i = 0; i < 6; i++) {
+    const a = i / 6 * Math.PI * 2;
+
+    const node = addMesh(
+      new THREE.SphereGeometry(s * 0.075, 10, 8),
+      glow[(colorIndex + i) % 6],
+      eye,
+      [
+        Math.cos(a) * s * 0.77,
+        Math.sin(a) * s * 0.77,
+        s * 0.34
+      ]
+    );
+
+    irisNodes.push(node);
+  }
+
+  // Housing bolts
+  for (let i = 0; i < 8; i++) {
+    const a = i / 8 * Math.PI * 2;
+
+    addMesh(
+      new THREE.SphereGeometry(s * 0.045, 8, 8),
+      chrome,
+      eye,
+      [
+        Math.cos(a) * s * 1.02,
+        Math.sin(a) * s * 1.02,
+        s * 0.24
+      ]
+    );
+  }
+
+  eyeAssemblies.push({
+    eye,
+    lens,
+    pupil,
+    irisRing,
+    irisNodes,
+    colorIndex
+  });
+}
+
+// Left eye
+createEye(-0.76, 0.16, 0.66, 0.30, 4);
+
+// Central eye
+createEye(0, 0.24, 0.84, 0.34, 2);
+
+// Right eye
+createEye(0.76, 0.16, 0.66, 0.30, 0);
+
+// ============================================
+// SIDE ARMOR AND SENSOR HOUSINGS
+// ============================================
+
+for (const side of [-1, 1]) {
+  const sideArmor = addMesh(
+    new THREE.OctahedronGeometry(0.65, 1),
+    titanium,
+    skull,
+    [side * 1.05, -0.05, 0.05]
+  );
+  sideArmor.scale.set(0.65, 0.9, 0.85);
+
+  const sidePlate = addMesh(
+    new THREE.BoxGeometry(0.32, 0.64, 0.40),
+    chrome,
+    skull,
+    [side * 1.18, -0.15, 0.48]
+  );
+  sidePlate.rotation.z = side * -0.22;
+
+  // Circular side sensor
+  const sensor = new THREE.Group();
+  sensor.position.set(side * 1.20, -0.12, 0.62);
+  skull.add(sensor);
+
+  addMesh(
+    new THREE.TorusGeometry(0.17, 0.04, 10, 32),
+    glow[side < 0 ? 4 : 1],
+    sensor
+  );
+
+  addMesh(
+    new THREE.SphereGeometry(0.105, 16, 12),
+    black,
+    sensor
+  );
+
+  addMesh(
+    new THREE.SphereGeometry(0.045, 12, 10),
+    glow[side < 0 ? 2 : 5],
+    sensor,
+    [0, 0, 0.08]
+  );
+}
+
+// ============================================
+// MIRRORED FANG ASSEMBLY
+// ============================================
+
+const fangAssemblies = [];
+
+function createFang(side) {
+  const fang = new THREE.Group();
+
+  fang.position.set(side * 0.43, -0.46, 0.77);
+
+  // Mirroring across the vertical center line
+  fang.scale.x = side;
+  skull.add(fang);
+
+  // Mount housing
+  const mount = addMesh(
+    new THREE.CylinderGeometry(0.22, 0.28, 0.24, 12),
+    darkMetal,
+    fang
+  );
+  mount.rotation.x = Math.PI / 2;
+
+  // Bearing ring
+  const bearing = addMesh(
+    new THREE.TorusGeometry(0.20, 0.045, 10, 36),
+    chrome,
+    fang,
+    [0, 0, 0.14]
+  );
+
+  const bearingGlow = addMesh(
+    new THREE.TorusGeometry(0.13, 0.025, 8, 32),
+    glow[side < 0 ? 4 : 1],
+    fang,
+    [0, 0, 0.17]
+  );
+
+  // Curved armored shell
+  const curve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0, -0.12, 0.05),
+    new THREE.Vector3(0.13, -0.35, 0.08),
+    new THREE.Vector3(0.29, -0.68, 0.10),
+    new THREE.Vector3(0.34, -1.02, 0.12),
+    new THREE.Vector3(0.25, -1.35, 0.13),
+    new THREE.Vector3(0.04, -1.60, 0.14)
+  ]);
+
+  const shell = addMesh(
+    new THREE.TubeGeometry(curve, 64, 0.15, 12, false),
+    new THREE.MeshPhysicalMaterial({
+      color: 0xb9c9e6,
+      metalness: 0.9,
+      roughness: 0.16,
+      clearcoat: 1,
+      emissive: 0x29105a,
+      emissiveIntensity: 0.25
+    }),
+    fang
+  );
+
+  // Chrome contour
+  addMesh(
+    new THREE.TubeGeometry(curve, 64, 0.022, 8, false),
+    chrome,
+    fang
+  );
+
+  // Rainbow energy channel
+  const energyCurve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0.09, -0.24, 0.19),
+    new THREE.Vector3(0.23, -0.49, 0.22),
+    new THREE.Vector3(0.34, -0.80, 0.23),
+    new THREE.Vector3(0.34, -1.10, 0.23),
+    new THREE.Vector3(0.22, -1.38, 0.23),
+    new THREE.Vector3(0.04, -1.57, 0.22)
+  ]);
+
+  const energy = addMesh(
+    new THREE.TubeGeometry(energyCurve, 48, 0.023, 8, false),
+    glow[side < 0 ? 4 : 2],
+    fang
+  );
+
+  // Armor panels
+  const panelPositions = [
+    [0.10, -0.30, 0.02],
+    [0.24, -0.63, 0.02],
+    [0.32, -0.98, 0.02],
+    [0.25, -1.28, 0.02]
+  ];
+
+  panelPositions.forEach((position, i) => {
+    const plate = addMesh(
+      new THREE.OctahedronGeometry(0.17, 0),
+      i % 2 === 0 ? chrome : titanium,
+      fang,
+      position
+    );
+
+    plate.scale.set(0.55, 1.1, 0.35);
+    plate.rotation.z = -0.4;
+  });
+
+  // Opal accent near mount
+  const opal = addMesh(
+    new THREE.IcosahedronGeometry(0.09, 1),
+    opalMaterial,
+    fang,
+    [0.17, -0.08, 0.29]
+  );
+
+  // Decorative light nodes
+  const nodes = [];
+
+  for (let i = 0; i < 4; i++) {
+    const node = addMesh(
+      new THREE.SphereGeometry(0.045, 10, 8),
+      glow[(i + (side < 0 ? 0 : 3)) % 6],
+      fang,
+      [
+        0.12 + i * 0.05,
+        -0.18 - i * 0.13,
+        0.28
+      ]
+    );
+    nodes.push(node);
+  }
+
+  fangAssemblies.push({
+    fang,
+    bearing,
+    bearingGlow,
+    opal,
+    nodes,
+    side
+  });
+}
+
+createFang(-1);
+createFang(1);
+
+// ============================================
+// LOWER MOUTH ARMOR
+// ============================================
+
+const mouth = addMesh(
+  new THREE.OctahedronGeometry(0.43, 1),
+  darkMetal,
+  skull,
+  [0, -0.62, 0.64]
+);
+mouth.scale.set(1.1, 0.58, 0.5);
+
+const mouthPlate = addMesh(
+  new THREE.BoxGeometry(0.85, 0.15, 0.26),
+  chrome,
+  skull,
+  [0, -0.72, 0.77]
+);
+
+// Small lower mouth opal
+const mouthOpal = addMesh(
+  new THREE.IcosahedronGeometry(0.09, 1),
+  glow[4],
+  skull,
+  [0, -0.59, 0.91]
+);
+
+// ============================================
+// RAINBOW HEAD CIRCUITS
+// ============================================
+
+const circuits = [];
+
+for (let i = 0; i < 6; i++) {
+  const side = i % 2 === 0 ? -1 : 1;
+
+  const line = addTube([
+    [side * 0.22, 0.65, 0.77],
+    [side * 0.47, 0.48, 0.77],
+    [side * 0.82, 0.35, 0.64],
+    [side * 1.04, 0.08, 0.52],
+    [side * 0.90, -0.25, 0.65]
+  ], 0.018, glow[i], skull);
+
+  circuits.push(line);
+}
+
+// ============================================
+// REAR BODY CONNECTORS
+// ============================================
+
+const connectors = [];
+
+for (let i = 0; i < 4; i++) {
+  const side = i % 2 === 0 ? -1 : 1;
+  const y = i < 2 ? 0.32 : -0.38;
+
+  const connector = new THREE.Group();
+  connector.position.set(side * 0.78, y, -0.70);
+  skull.add(connector);
+
+  const socket = addMesh(
+    new THREE.CylinderGeometry(0.20, 0.23, 0.30, 12),
+    darkMetal,
+    connector
+  );
+  socket.rotation.z = Math.PI / 2;
+
+  const rim = addMesh(
+    new THREE.TorusGeometry(0.16, 0.035, 8, 28),
+    chrome,
+    connector,
+    [side * 0.16, 0, 0]
+  );
+  rim.rotation.y = Math.PI / 2;
+
+  addMesh(
+    new THREE.SphereGeometry(0.075, 12, 10),
+    glow[i + 1],
+    connector,
+    [side * 0.19, 0, 0]
+  );
+
+  connectors.push(connector);
+}
+
+// ============================================
+// ARMOR BOLTS
+// ============================================
+
+for (let i = 0; i < 12; i++) {
+  const a = i / 12 * Math.PI * 2;
+
+  addMesh(
+    new THREE.SphereGeometry(0.035, 8, 8),
+    chrome,
+    skull,
+    [
+      Math.cos(a) * 1.0,
+      Math.sin(a) * 0.60,
+      0.48
+    ]
+  );
+}
+
+// ============================================
+// STAR FIELD
+// ============================================
+
+const positions = [];
+
+for (let i = 0; i < 650; i++) {
+  positions.push(
+    (Math.random() - 0.5) * 28,
+    (Math.random() - 0.5) * 20,
+    (Math.random() - 0.5) * 28
+  );
+}
+
+const starGeometry = new THREE.BufferGeometry();
+starGeometry.setAttribute(
+  "position",
+  new THREE.Float32BufferAttribute(positions, 3)
+);
+
+const stars = new THREE.Points(
+  starGeometry,
+  new THREE.PointsMaterial({
+    color: 0x9acbff,
+    size: 0.035,
+    transparent: true,
+    opacity: 0.8
+  })
+);
+
+scene.add(stars);
+
+// ============================================
+// ANIMATION
+// ============================================
+
+const clock = new THREE.Clock();
+
+function animate() {
+  requestAnimationFrame(animate);
+
+  const t = clock.getElapsedTime();
+
+  // Gentle head movement
+  head.rotation.y = Math.sin(t * 0.35) * 0.10;
+  head.rotation.x = Math.sin(t * 0.25) * 0.025;
+
+  // Forehead crystal
+  foreheadOpal.rotation.y = t * 0.65;
+  foreheadOpal.rotation.x = t * 0.3;
+
+  foreheadOpal.material.emissiveIntensity =
+    1.5 + Math.sin(t * 3) * 0.8;
+
+  foreheadLight.intensity =
+    2.5 + Math.sin(t * 3) * 1.2;
+
+  // Eye animation
+  eyeAssemblies.forEach((eye, i) => {
+    eye.irisRing.rotation.z = t * (i % 2 ? -0.45 : 0.45);
+    eye.pupil.rotation.y = Math.sin(t * 0.8 + i) * 0.2;
+
+    eye.lens.material.emissiveIntensity =
+      1.4 + Math.sin(t * 2.5 + i) * 0.6;
+
+    eye.irisNodes.forEach((node, j) => {
+      node.scale.setScalar(
+        1 + Math.sin(t * 3 + j + i) * 0.12
+      );
+    });
+  });
+
+  // Fang energy animation
+  fangAssemblies.forEach((item, i) => {
+    item.opal.rotation.y = t * (i ? -0.7 : 0.7);
+    item.bearing.rotation.z = t * 0.35;
+    item.bearingGlow.rotation.z = -t * 0.55;
+
+    item.nodes.forEach((node, j) => {
+      node.scale.setScalar(
+        1 + Math.sin(t * 3 + j + i) * 0.15
+      );
+    });
+  });
+
+  // Circuits pulse
+  circuits.forEach((line, i) => {
+    line.material.emissiveIntensity =
+      1.5 + Math.sin(t * 3 + i) * 0.8;
+  });
+
+  mouthOpal.rotation.y = t * 0.8;
+  stars.rotation.y = t * 0.008;
+
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+animate();
+
+// ============================================
+// RESIZE
+// ============================================
+
+window.addEventListener("resize", () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+</script>
+</body>
+</html>
