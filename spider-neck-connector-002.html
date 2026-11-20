@@ -1,0 +1,432 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Opal Star Spark - Neck Connector 002</title>
+<style>
+  body { margin:0; overflow:hidden; background:#050612; font-family:Arial,sans-serif; }
+  #hud {
+    position:fixed; top:14px; left:14px; color:#dceaff;
+    background:#10152acc; border:1px solid #6c72ff66;
+    border-radius:12px; padding:12px 15px;
+    font-size:12px; line-height:1.7; pointer-events:none;
+  }
+  #hud strong { color:#8ffaff; display:block; }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+<div id="hud">
+  <strong>OPAL STAR SPARK</strong>
+  NECK CONNECTOR · 002<br>
+  REAR: THORAX RECEIVER<br>
+  FRONT: FOUR-PIN HEAD YOKE<br>
+  MODULAR ASSEMBLY PREVIEW
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x050612);
+scene.fog = new THREE.FogExp2(0x050612,0.022);
+
+const camera = new THREE.PerspectiveCamera(
+  45, innerWidth/innerHeight, 0.1, 100
+);
+camera.position.set(4.5,3.2,5.8);
+
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth,innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.3;
+document.body.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera,renderer.domElement);
+controls.enableDamping = true;
+controls.target.set(0,0,0);
+
+scene.add(new THREE.AmbientLight(0x8292c9,1.2));
+
+function addLight(color,intensity,position) {
+  const l = new THREE.PointLight(color,intensity,14);
+  l.position.set(...position);
+  scene.add(l);
+}
+addLight(0x35eaff,35,[3,3,3]);
+addLight(0xc13dff,30,[-3,1,-2]);
+addLight(0xff55bd,22,[0,-2,-3]);
+
+const titanium = new THREE.MeshStandardMaterial({
+  color:0x899ab8, metalness:0.92, roughness:0.22
+});
+const darkMetal = new THREE.MeshStandardMaterial({
+  color:0x11182c, metalness:0.85, roughness:0.3
+});
+const chrome = new THREE.MeshStandardMaterial({
+  color:0xd9edff, metalness:1, roughness:0.12
+});
+const opal = new THREE.MeshPhysicalMaterial({
+  color:0x9d7aff,
+  emissive:0x5520ff,
+  emissiveIntensity:1.7,
+  metalness:0.2,
+  roughness:0.12,
+  clearcoat:1
+});
+const rainbow = [
+  0xff3c9e,0xffa52f,0xeaff48,
+  0x35ffe0,0x3995ff,0xc15aff
+];
+
+const assembly = new THREE.Group();
+scene.add(assembly);
+
+// Cylinder axis aligned to Z.
+function cylinderZ(parent,r1,r2,depth,material,z) {
+  const mesh = new THREE.Mesh(
+    new THREE.CylinderGeometry(r1,r2,depth,20),
+    material
+  );
+  mesh.rotation.x = Math.PI/2;
+  mesh.position.z = z;
+  parent.add(mesh);
+  return mesh;
+}
+
+function torusAt(parent,radius,tube,material,z) {
+  const mesh = new THREE.Mesh(
+    new THREE.TorusGeometry(radius,tube,12,48),
+    material
+  );
+  mesh.position.z = z;
+  parent.add(mesh);
+  return mesh;
+}
+
+// --------------------------------------------------
+// 1. REAR THORAX RECEIVER
+// The thorax connector approaches from +Z.
+// The receiver opening faces +Z.
+// --------------------------------------------------
+
+const receiver = new THREE.Group();
+receiver.position.z = -1.0;
+assembly.add(receiver);
+
+// Hollow sleeve represented by outer cylinder and inner bore.
+const sleeve = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.38,0.38,0.54,24,1,true),
+  titanium
+);
+sleeve.rotation.x = Math.PI/2;
+receiver.add(sleeve);
+
+// Rear retaining ring
+cylinderZ(receiver,0.42,0.42,0.10,chrome,-0.22);
+torusAt(receiver,0.31,0.045,darkMetal,0.12);
+
+// Dark opening and visible internal bore
+cylinderZ(receiver,0.275,0.275,0.035,darkMetal,0.265);
+torusAt(receiver,0.275,0.025,
+  new THREE.MeshStandardMaterial({
+    color:0x38eaff,emissive:0x16bfff,emissiveIntensity:2
+  }),0.29);
+
+// Internal contact pins
+for(let i=0;i<4;i++){
+  const a=i*Math.PI/2;
+  const contact=new THREE.Mesh(
+    new THREE.CylinderGeometry(0.035,0.035,0.12,12),
+    chrome
+  );
+  contact.rotation.x=Math.PI/2;
+  contact.position.set(
+    Math.cos(a)*0.19,
+    Math.sin(a)*0.19,
+    0.20
+  );
+  receiver.add(contact);
+}
+
+// --------------------------------------------------
+// 2. CENTRAL STRUCTURAL SPINE
+// --------------------------------------------------
+
+const spine = new THREE.Group();
+assembly.add(spine);
+
+const spineBody = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.27,0.34,1.48,12),
+  darkMetal
+);
+spineBody.rotation.x=Math.PI/2;
+spineBody.position.z=-0.05;
+spine.add(spineBody);
+
+const innerShaft = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.17,0.19,1.4,16),
+  chrome
+);
+innerShaft.rotation.x=Math.PI/2;
+innerShaft.position.z=-0.05;
+spine.add(innerShaft);
+
+// Main energy core
+const core = new THREE.Mesh(
+  new THREE.OctahedronGeometry(0.28,1),
+  opal
+);
+core.scale.set(1,0.85,1.25);
+core.position.z=-0.05;
+spine.add(core);
+
+// --------------------------------------------------
+// 3. ARTICULATED BEARING RINGS
+// --------------------------------------------------
+
+const bearings=[];
+
+for(let i=0;i<3;i++){
+  const group=new THREE.Group();
+  group.position.z=-0.55+i*0.45;
+  assembly.add(group);
+
+  const ring=new THREE.Mesh(
+    new THREE.TorusGeometry(0.34,0.065,12,48),
+    chrome
+  );
+  group.add(ring);
+
+  const innerRing=new THREE.Mesh(
+    new THREE.TorusGeometry(0.26,0.025,8,40),
+    new THREE.MeshStandardMaterial({
+      color:rainbow[i*2],
+      emissive:rainbow[i*2],
+      emissiveIntensity:2
+    })
+  );
+  group.add(innerRing);
+
+  bearings.push(group);
+}
+
+// --------------------------------------------------
+// 4. FRONT FOUR-PIN HEAD YOKE
+// Four pins arranged at the previous head socket
+// X/Y coordinates. They project toward +Z.
+// --------------------------------------------------
+
+const yoke = new THREE.Group();
+yoke.position.z=0.90;
+assembly.add(yoke);
+
+// Cross-shaped support frame
+const horizontal = new THREE.Mesh(
+  new THREE.BoxGeometry(1.85,0.18,0.22),
+  titanium
+);
+horizontal.position.y=-0.03;
+yoke.add(horizontal);
+
+const vertical = new THREE.Mesh(
+  new THREE.BoxGeometry(0.18,1.0,0.22),
+  titanium
+);
+vertical.position.set(0,-0.03,0);
+yoke.add(vertical);
+
+// Central reinforced mounting plate
+const plate = new THREE.Mesh(
+  new THREE.BoxGeometry(0.64,0.64,0.20),
+  darkMetal
+);
+plate.position.z=0.12;
+yoke.add(plate);
+
+// Central decorative reactor
+const yokeCore = new THREE.Mesh(
+  new THREE.OctahedronGeometry(0.24,1),
+  opal
+);
+yokeCore.position.z=0.25;
+yoke.add(yokeCore);
+
+// Four head mounting pins.
+// Positions correspond to the head prototype's
+// four rear mounting sockets.
+const socketPositions = [
+  [-0.78, 0.32],
+  [ 0.78, 0.32],
+  [-0.78,-0.38],
+  [ 0.78,-0.38]
+];
+
+const pins=[];
+
+for(let i=0;i<4;i++){
+  const [x,y]=socketPositions[i];
+  const pinGroup=new THREE.Group();
+  pinGroup.position.set(x,y,0.14);
+  yoke.add(pinGroup);
+
+  const base=new THREE.Mesh(
+    new THREE.CylinderGeometry(0.235,0.25,0.13,16),
+    darkMetal
+  );
+  base.rotation.x=Math.PI/2;
+  base.position.z=0.03;
+  pinGroup.add(base);
+
+  const collar=new THREE.Mesh(
+    new THREE.CylinderGeometry(0.20,0.20,0.08,16),
+    chrome
+  );
+  collar.rotation.x=Math.PI/2;
+  collar.position.z=0.12;
+  pinGroup.add(collar);
+
+  const pin=new THREE.Mesh(
+    new THREE.CylinderGeometry(0.17,0.17,0.24,16),
+    titanium
+  );
+  pin.rotation.x=Math.PI/2;
+  pin.position.z=0.27;
+  pinGroup.add(pin);
+
+  const tip=new THREE.Mesh(
+    new THREE.SphereGeometry(0.16,16,12),
+    opal
+  );
+  tip.position.z=0.40;
+  tip.scale.set(1,1,0.42);
+  pinGroup.add(tip);
+
+  const glow=new THREE.Mesh(
+    new THREE.TorusGeometry(0.19,0.018,8,32),
+    new THREE.MeshBasicMaterial({color:rainbow[i]})
+  );
+  glow.position.z=0.16;
+  pinGroup.add(glow);
+
+  pins.push(pinGroup);
+}
+
+// --------------------------------------------------
+// 5. SIDE ARMOR AND ENERGY CONDUITS
+// --------------------------------------------------
+
+for(const side of [-1,1]){
+  for(let i=0;i<2;i++){
+    const armor=new THREE.Mesh(
+      new THREE.BoxGeometry(0.14,0.42,0.48),
+      titanium
+    );
+    armor.position.set(side*0.34,0.08,-0.28+i*0.50);
+    armor.rotation.z=side*0.20;
+    assembly.add(armor);
+  }
+}
+
+for(let side of [-1,1]){
+  for(let i=0;i<3;i++){
+    const x=side*(0.20+i*0.045);
+    const curve=new THREE.CatmullRomCurve3([
+      new THREE.Vector3(x,0.22,-0.92),
+      new THREE.Vector3(x*1.2,0.30,-0.48),
+      new THREE.Vector3(x*1.2,0.30,0.30),
+      new THREE.Vector3(x,0.22,0.88)
+    ]);
+
+    const tube=new THREE.Mesh(
+      new THREE.TubeGeometry(curve,32,0.022,7,false),
+      new THREE.MeshStandardMaterial({
+        color:rainbow[i*2],
+        emissive:rainbow[i*2],
+        emissiveIntensity:2
+      })
+    );
+    assembly.add(tube);
+  }
+}
+
+// Decorative bolts around receiver
+for(let i=0;i<8;i++){
+  const a=i*Math.PI/4;
+  const bolt=new THREE.Mesh(
+    new THREE.SphereGeometry(0.045,10,8),
+    chrome
+  );
+  bolt.position.set(
+    Math.cos(a)*0.42,
+    Math.sin(a)*0.42,
+    -1.18
+  );
+  assembly.add(bolt);
+}
+
+// Stars
+const starPositions=[];
+for(let i=0;i<450;i++){
+  starPositions.push(
+    (Math.random()-0.5)*22,
+    (Math.random()-0.5)*16,
+    (Math.random()-0.5)*22
+  );
+}
+const starGeometry=new THREE.BufferGeometry();
+starGeometry.setAttribute(
+  'position',
+  new THREE.Float32BufferAttribute(starPositions,3)
+);
+scene.add(new THREE.Points(
+  starGeometry,
+  new THREE.PointsMaterial({
+    color:0x9dbbff,size:0.025,transparent:true,opacity:0.8
+  })
+));
+
+// Animation
+const clock=new THREE.Clock();
+
+function animate(){
+  requestAnimationFrame(animate);
+  const t=clock.getElapsedTime();
+
+  core.rotation.y=t*0.7;
+  core.rotation.x=Math.sin(t)*0.15;
+  yokeCore.rotation.y=-t*0.8;
+
+  bearings.forEach((g,i)=>{
+    g.rotation.z=Math.sin(t*1.2+i)*0.06;
+    g.rotation.y=t*(i%2===0?0.22:-0.22);
+  });
+
+  pins.forEach((p,i)=>{
+    p.rotation.y=Math.sin(t*1.5+i)*0.025;
+  });
+
+  controls.update();
+  renderer.render(scene,camera);
+}
+animate();
+
+addEventListener('resize',()=>{
+  camera.aspect=innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+});
+</script>
+</body>
+</html>
