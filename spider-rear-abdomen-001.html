@@ -1,0 +1,324 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Opal Star Spark — Rear Abdomen</title>
+<style>
+  body { margin:0; overflow:hidden; background:#050612; font-family:Arial,sans-serif; }
+  #hud {
+    position:fixed; top:16px; left:16px; color:#d9eaff;
+    background:#10152acc; border:1px solid #6c72ff66;
+    border-radius:12px; padding:12px 16px; font-size:12px;
+    letter-spacing:1px; pointer-events:none;
+  }
+  #hud strong { color:#8ffaff; display:block; margin-bottom:5px; }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+<div id="hud">
+  <strong>OPAL STAR SPARK</strong>
+  REAR ABDOMEN MODULE · 001<br>
+  FRONT CONNECTOR: +Z<br>
+  THORAX CONNECTION: Z = -1.50
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x050612);
+scene.fog = new THREE.FogExp2(0x050612, 0.025);
+
+const camera = new THREE.PerspectiveCamera(
+  45, innerWidth / innerHeight, 0.1, 100
+);
+camera.position.set(4.8, 3.4, 6.8);
+
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.35;
+document.body.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.target.set(0, 0, -0.65);
+
+scene.add(new THREE.AmbientLight(0x7184bd, 1.1));
+
+function light(color, intensity, position) {
+  const l = new THREE.PointLight(color, intensity, 12);
+  l.position.set(...position);
+  scene.add(l);
+}
+light(0x35eaff, 35, [3, 2, 3]);
+light(0xc13dff, 30, [-3, 1, -2]);
+light(0xff55bd, 22, [0, -2, -3]);
+light(0xffffff, 12, [0, 4, 0]);
+
+const titanium = new THREE.MeshStandardMaterial({
+  color:0x8799b9, metalness:0.92, roughness:0.23
+});
+const darkMetal = new THREE.MeshStandardMaterial({
+  color:0x11182d, metalness:0.85, roughness:0.32
+});
+const chrome = new THREE.MeshStandardMaterial({
+  color:0xd7eaff, metalness:1, roughness:0.12
+});
+const black = new THREE.MeshStandardMaterial({
+  color:0x050914, metalness:0.75, roughness:0.25
+});
+const opal = new THREE.MeshPhysicalMaterial({
+  color:0x9e83ff, emissive:0x5420ff,
+  emissiveIntensity:1.7, metalness:0.25,
+  roughness:0.12, transmission:0.15,
+  thickness:1, clearcoat:1
+});
+
+const rainbow = [
+  0xff3c9e, 0xffa52f, 0xeaff48,
+  0x35ffe0, 0x3995ff, 0xc15aff
+];
+
+const abdomen = new THREE.Group();
+scene.add(abdomen);
+
+// Main faceted abdomen shell
+const shellGeo = new THREE.IcosahedronGeometry(1, 3);
+const shell = new THREE.Mesh(shellGeo, titanium);
+shell.scale.set(1.05, 0.78, 1.48);
+shell.position.z = -0.85;
+abdomen.add(shell);
+
+// Dark inner body beneath the armor
+const inner = new THREE.Mesh(
+  new THREE.SphereGeometry(0.87, 32, 24),
+  darkMetal
+);
+inner.scale.set(1, 0.75, 1.43);
+inner.position.z = -0.85;
+abdomen.add(inner);
+
+// Upper dorsal armor plates
+function plate(x, y, z, sx, sy, sz, rotation=0) {
+  const mesh = new THREE.Mesh(
+    new THREE.OctahedronGeometry(1, 1), titanium
+  );
+  mesh.scale.set(sx, sy, sz);
+  mesh.position.set(x, y, z);
+  mesh.rotation.z = rotation;
+  abdomen.add(mesh);
+  return mesh;
+}
+
+plate(0, 0.66, -0.82, 0.72, 0.18, 0.82);
+plate(-0.65, 0.38, -0.85, 0.42, 0.14, 0.75, -0.25);
+plate(0.65, 0.38, -0.85, 0.42, 0.14, 0.75, 0.25);
+
+// Side armor panels
+for (const side of [-1, 1]) {
+  for (let i=0; i<3; i++) {
+    const z = -0.2 - i*0.62;
+    const panel = new THREE.Mesh(
+      new THREE.BoxGeometry(0.16, 0.42, 0.48),
+      titanium
+    );
+    panel.position.set(side*0.92, 0, z);
+    panel.rotation.z = side * -0.18;
+    abdomen.add(panel);
+
+    const seam = new THREE.Mesh(
+      new THREE.BoxGeometry(0.035, 0.3, 0.36),
+      darkMetal
+    );
+    seam.position.set(side*1.015, 0, z);
+    abdomen.add(seam);
+  }
+}
+
+// Front connector: points toward thorax (+Z)
+const connector = new THREE.Group();
+connector.position.set(0, 0, 0.48);
+abdomen.add(connector);
+
+function cylinderZ(parent, radius1, radius2, depth, material, z) {
+  const m = new THREE.Mesh(
+    new THREE.CylinderGeometry(radius1, radius2, depth, 12),
+    material
+  );
+  m.rotation.x = Math.PI/2;
+  m.position.z = z;
+  parent.add(m);
+  return m;
+}
+
+cylinderZ(connector, 0.39, 0.47, 0.34, darkMetal, 0.02);
+cylinderZ(connector, 0.34, 0.34, 0.09, chrome, 0.22);
+cylinderZ(connector, 0.24, 0.24, 0.12, darkMetal, 0.29);
+cylinderZ(connector, 0.16, 0.16, 0.12, opal, 0.36);
+
+const connectorRing = new THREE.Mesh(
+  new THREE.TorusGeometry(0.35, 0.045, 10, 48), 
+  new THREE.MeshStandardMaterial({
+    color:0x39f5ff, emissive:0x19cfff, emissiveIntensity:2
+  })
+);
+connectorRing.position.z = 0.19;
+connector.add(connectorRing);
+
+// Central opal reactor window
+const reactor = new THREE.Group();
+reactor.position.set(0, 0.35, -0.8);
+abdomen.add(reactor);
+
+const reactorFrame = new THREE.Mesh(
+  new THREE.TorusGeometry(0.43, 0.085, 12, 64),
+  chrome
+);
+reactor.add(reactorFrame);
+
+const reactorInner = new THREE.Mesh(
+  new THREE.TorusGeometry(0.32, 0.035, 10, 48),
+  new THREE.MeshStandardMaterial({
+    color:0xff48d1, emissive:0x9b22ff, emissiveIntensity:2
+  })
+);
+reactor.add(reactorInner);
+
+const reactorCore = new THREE.Mesh(
+  new THREE.OctahedronGeometry(0.32, 1), opal
+);
+reactorCore.scale.set(1, 0.8, 1.1);
+reactor.add(reactorCore);
+
+// Rear energy vents, facing toward -Z
+for (let i=0; i<5; i++) {
+  const x = (i-2)*0.29;
+  const vent = new THREE.Mesh(
+    new THREE.BoxGeometry(0.17, 0.28, 0.08),
+    darkMetal
+  );
+  vent.position.set(x, 0.08, -2.22);
+  abdomen.add(vent);
+
+  const glow = new THREE.Mesh(
+    new THREE.BoxGeometry(0.075, 0.19, 0.035),
+    new THREE.MeshBasicMaterial({color:rainbow[i]})
+  );
+  glow.position.set(x, 0.08, -2.27);
+  abdomen.add(glow);
+}
+
+// Rainbow circuit paths on top
+const circuits = [];
+for (let i=0; i<6; i++) {
+  const x = (i-2.5)*0.19;
+  const curve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(x*0.4, 0.71, 0.05),
+    new THREE.Vector3(x, 0.77, -0.35),
+    new THREE.Vector3(x*1.25, 0.76, -0.9),
+    new THREE.Vector3(x*0.8, 0.65, -1.55)
+  ]);
+  const tube = new THREE.Mesh(
+    new THREE.TubeGeometry(curve, 32, 0.018, 6, false),
+    new THREE.MeshStandardMaterial({
+      color:rainbow[i],
+      emissive:rainbow[i],
+      emissiveIntensity:1.8
+    })
+  );
+  abdomen.add(tube);
+  circuits.push(tube);
+}
+
+// Armor bolts
+for (let side of [-1,1]) {
+  for (let i=0; i<4; i++) {
+    const bolt = new THREE.Mesh(
+      new THREE.SphereGeometry(0.055, 10, 8), chrome
+    );
+    bolt.position.set(side*0.78, 0.46, -0.15-i*0.48);
+    abdomen.add(bolt);
+  }
+}
+
+// Side reactor lights
+const nodes = [];
+for (let i=0; i<rainbow.length; i++) {
+  const angle = i*Math.PI/3;
+  const node = new THREE.Mesh(
+    new THREE.SphereGeometry(0.075, 12, 10),
+    new THREE.MeshBasicMaterial({color:rainbow[i]})
+  );
+  node.position.set(
+    Math.cos(angle)*0.9,
+    Math.sin(angle)*0.45,
+    -0.85
+  );
+  abdomen.add(node);
+  nodes.push(node);
+}
+
+// Small floating stars
+const starGeometry = new THREE.BufferGeometry();
+const starPositions = [];
+for (let i=0; i<500; i++) {
+  starPositions.push(
+    (Math.random()-0.5)*25,
+    (Math.random()-0.5)*18,
+    (Math.random()-0.5)*25
+  );
+}
+starGeometry.setAttribute(
+  'position',
+  new THREE.Float32BufferAttribute(starPositions,3)
+);
+scene.add(new THREE.Points(
+  starGeometry,
+  new THREE.PointsMaterial({
+    color:0x9dbbff, size:0.025, transparent:true, opacity:0.8
+  })
+));
+
+// Animation
+const clock = new THREE.Clock();
+
+function animate() {
+  requestAnimationFrame(animate);
+  const t = clock.getElapsedTime();
+
+  reactorCore.rotation.y = t*0.55;
+  reactorCore.rotation.x = Math.sin(t*0.7)*0.2;
+  reactorInner.rotation.z = t*0.45;
+  connectorRing.rotation.z = -t*0.4;
+
+  nodes.forEach((node,i) => {
+    node.material.color.setHex(rainbow[i]);
+    node.scale.setScalar(0.8 + Math.sin(t*3+i)*0.2);
+  });
+
+  controls.update();
+  renderer.render(scene,camera);
+}
+animate();
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+});
+</script>
+</body>
+</html>
