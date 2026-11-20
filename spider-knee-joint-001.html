@@ -1,0 +1,426 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Opal Star Spark - Knee Joint 001</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    overflow: hidden;
+    background: #050611;
+    color: #eafaff;
+    font-family: Arial, sans-serif;
+  }
+  #hud {
+    position: fixed;
+    top: 18px;
+    left: 18px;
+    pointer-events: none;
+  }
+  h2 {
+    margin: 0;
+    font-size: 17px;
+    letter-spacing: 3px;
+    color: #b9faff;
+    text-shadow: 0 0 12px #00d9ff;
+  }
+  p {
+    color: #9b9bbd;
+    font-size: 11px;
+    letter-spacing: 2px;
+  }
+  #hint {
+    position: fixed;
+    bottom: 16px;
+    left: 18px;
+    color: #8b91b5;
+    font-size: 11px;
+    letter-spacing: 1px;
+  }
+</style>
+</head>
+<body>
+<div id="hud">
+  <h2>OPAL STAR SPARK</h2>
+  <p>KNEE JOINT / PROTOTYPE 001</p>
+</div>
+<div id="hint">DRAG TO ORBIT · SCROLL TO ZOOM</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x050611);
+scene.fog = new THREE.FogExp2(0x050611, 0.035);
+
+const camera = new THREE.PerspectiveCamera(
+  42, innerWidth / innerHeight, 0.1, 100
+);
+camera.position.set(3.8, 3.1, 5.8);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.2;
+document.body.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.target.set(0, 0, 0);
+
+scene.add(new THREE.AmbientLight(0x9aabff, 0.8));
+
+function light(color, intensity, position) {
+  const l = new THREE.PointLight(color, intensity, 12);
+  l.position.set(...position);
+  scene.add(l);
+}
+light(0x00ddff, 30, [3, 2, 3]);
+light(0xff22cc, 24, [-3, 0, -2]);
+light(0x8b4dff, 20, [0, -3, 1]);
+
+const metal = new THREE.MeshStandardMaterial({
+  color: 0x718097, metalness: 0.94, roughness: 0.22
+});
+const darkMetal = new THREE.MeshStandardMaterial({
+  color: 0x171d30, metalness: 0.9, roughness: 0.3
+});
+const brightMetal = new THREE.MeshStandardMaterial({
+  color: 0xc8e1ef, metalness: 0.96, roughness: 0.16
+});
+const black = new THREE.MeshStandardMaterial({
+  color: 0x080d1a, metalness: 0.7, roughness: 0.32
+});
+
+const rainbow = [
+  0xff287c, 0xff8b35, 0xffe65a,
+  0x54ffb5, 0x27dfff, 0x9b62ff
+];
+
+const glow = rainbow.map(color => new THREE.MeshStandardMaterial({
+  color,
+  emissive: color,
+  emissiveIntensity: 2.2,
+  metalness: 0.35,
+  roughness: 0.2
+}));
+
+const root = new THREE.Group();
+scene.add(root);
+
+function mesh(geometry, material, parent, position = [0,0,0]) {
+  const m = new THREE.Mesh(geometry, material);
+  m.position.set(...position);
+  parent.add(m);
+  return m;
+}
+
+function barBetween(a, b, radius, material, parent) {
+  const start = new THREE.Vector3(...a);
+  const end = new THREE.Vector3(...b);
+  const direction = new THREE.Vector3().subVectors(end, start);
+  const length = direction.length();
+
+  const rod = mesh(
+    new THREE.CylinderGeometry(radius, radius, length, 12),
+    material,
+    parent
+  );
+  rod.position.copy(start).add(end).multiplyScalar(0.5);
+  rod.quaternion.setFromUnitVectors(
+    new THREE.Vector3(0, 1, 0),
+    direction.normalize()
+  );
+  return rod;
+}
+
+// Main hinge assembly.
+// The axle runs across the X axis.
+const hinge = new THREE.Group();
+root.add(hinge);
+
+// Central armored hinge body
+mesh(
+  new THREE.SphereGeometry(0.55, 24, 20),
+  darkMetal,
+  hinge
+);
+
+mesh(
+  new THREE.OctahedronGeometry(0.49, 1),
+  metal,
+  hinge
+).scale.set(1.0, 0.9, 0.9);
+
+// Main circular bearing rings
+const bearing = new THREE.Group();
+hinge.add(bearing);
+
+for (let i = 0; i < 3; i++) {
+  const ring = mesh(
+    new THREE.TorusGeometry(0.43 - i * 0.075, 0.035, 10, 40),
+    i === 1 ? glow[4] : brightMetal,
+    bearing
+  );
+  ring.rotation.y = Math.PI / 2;
+}
+
+// Central axle cap on both sides
+for (const side of [-1, 1]) {
+  const cap = mesh(
+    new THREE.CylinderGeometry(0.28, 0.28, 0.19, 16),
+    brightMetal,
+    hinge,
+    [side * 0.48, 0, 0]
+  );
+  cap.rotation.z = Math.PI / 2;
+
+  const innerCap = mesh(
+    new THREE.CylinderGeometry(0.19, 0.19, 0.205, 16),
+    darkMetal,
+    hinge,
+    [side * 0.59, 0, 0]
+  );
+  innerCap.rotation.z = Math.PI / 2;
+
+  const core = mesh(
+    new THREE.SphereGeometry(0.13, 16, 12),
+    glow[side < 0 ? 0 : 4],
+    hinge,
+    [side * 0.7, 0, 0]
+  );
+
+  // Bearing bolts
+  for (let i = 0; i < 8; i++) {
+    const a = i / 8 * Math.PI * 2;
+    mesh(
+      new THREE.SphereGeometry(0.035, 8, 8),
+      brightMetal,
+      hinge,
+      [
+        side * 0.61,
+        Math.cos(a) * 0.22,
+        Math.sin(a) * 0.22
+      ]
+    );
+  }
+}
+
+// Upper and lower limb connectors
+const connectors = new THREE.Group();
+root.add(connectors);
+
+for (const z of [-0.88, 0.88]) {
+  const direction = z < 0 ? -1 : 1;
+
+  const connector = mesh(
+    new THREE.CylinderGeometry(0.19, 0.26, 0.62, 8),
+    metal,
+    connectors,
+    [0, 0, z]
+  );
+  connector.rotation.x = Math.PI / 2;
+
+  const collar = mesh(
+    new THREE.TorusGeometry(0.22, 0.045, 8, 24),
+    brightMetal,
+    connectors,
+    [0, 0, z - direction * 0.19]
+  );
+  collar.rotation.x = Math.PI / 2;
+
+  const inner = mesh(
+    new THREE.CylinderGeometry(0.13, 0.13, 0.13, 12),
+    black,
+    connectors,
+    [0, 0, z + direction * 0.25]
+  );
+  inner.rotation.x = Math.PI / 2;
+}
+
+// Side armor shields
+for (const side of [-1, 1]) {
+  const shield = mesh(
+    new THREE.OctahedronGeometry(0.53, 0),
+    metal,
+    hinge,
+    [side * 0.43, 0, 0]
+  );
+  shield.scale.set(0.3, 1.0, 1.25);
+
+  const inset = mesh(
+    new THREE.OctahedronGeometry(0.35, 0),
+    darkMetal,
+    hinge,
+    [side * 0.49, 0, 0]
+  );
+  inset.scale.set(0.25, 0.9, 1.1);
+
+  // Small illuminated shield marks
+  for (let i = 0; i < 3; i++) {
+    mesh(
+      new THREE.SphereGeometry(0.055, 10, 8),
+      glow[(i + (side > 0 ? 3 : 0)) % 6],
+      hinge,
+      [side * 0.54, -0.2 + i * 0.2, 0.12]
+    );
+  }
+}
+
+// Twin hydraulic actuators.
+// Their rods sit diagonally behind the hinge.
+const actuators = [];
+
+for (const side of [-1, 1]) {
+  const x = side * 0.31;
+
+  barBetween(
+    [x, -0.24, -0.58],
+    [x, -0.24, 0.58],
+    0.095,
+    darkMetal,
+    root
+  );
+
+  const rod = barBetween(
+    [x, -0.24, -0.42],
+    [x, -0.24, 0.42],
+    0.035,
+    brightMetal,
+    root
+  );
+  actuators.push(rod);
+
+  // Actuator end collars
+  for (const z of [-0.48, 0.48]) {
+    const collar = mesh(
+      new THREE.SphereGeometry(0.12, 12, 10),
+      metal,
+      root,
+      [x, -0.24, z]
+    );
+  }
+}
+
+// Rainbow energy loops around the hinge
+const energyRings = [];
+
+for (let i = 0; i < 6; i++) {
+  const ring = mesh(
+    new THREE.TorusGeometry(0.63 + i * 0.025, 0.018, 8, 48),
+    glow[i],
+    hinge
+  );
+  ring.rotation.y = Math.PI / 2;
+  energyRings.push(ring);
+}
+
+// Circuit lines on the upper and lower connector
+for (let i = 0; i < 6; i++) {
+  const x = -0.14 + i * 0.056;
+
+  barBetween(
+    [x, 0.25, -1.05],
+    [x, 0.25, -0.77],
+    0.012,
+    glow[i],
+    connectors
+  );
+
+  barBetween(
+    [x, 0.25, 0.77],
+    [x, 0.25, 1.05],
+    0.012,
+    glow[(i + 3) % 6],
+    connectors
+  );
+}
+
+// Tiny mechanical details
+for (const side of [-1, 1]) {
+  for (const z of [-0.35, 0.35]) {
+    mesh(
+      new THREE.BoxGeometry(0.12, 0.12, 0.12),
+      brightMetal,
+      hinge,
+      [side * 0.55, 0.42, z]
+    );
+  }
+}
+
+// Star field
+const starPositions = [];
+for (let i = 0; i < 500; i++) {
+  starPositions.push(
+    (Math.random() - 0.5) * 25,
+    (Math.random() - 0.5) * 18,
+    (Math.random() - 0.5) * 25
+  );
+}
+
+const starGeometry = new THREE.BufferGeometry();
+starGeometry.setAttribute(
+  "position",
+  new THREE.Float32BufferAttribute(starPositions, 3)
+);
+
+const stars = new THREE.Points(
+  starGeometry,
+  new THREE.PointsMaterial({
+    color: 0x9acbff,
+    size: 0.035,
+    transparent: true,
+    opacity: 0.8
+  })
+);
+scene.add(stars);
+
+// Animation: the hinge rotates slightly around its axle.
+const clock = new THREE.Clock();
+
+function animate() {
+  requestAnimationFrame(animate);
+  const t = clock.getElapsedTime();
+
+  hinge.rotation.x = Math.sin(t * 1.1) * 0.12;
+  bearing.rotation.x = t * 0.45;
+
+  energyRings.forEach((ring, i) => {
+    ring.material.emissiveIntensity =
+      1.5 + Math.sin(t * 3 + i) * 1.0;
+  });
+
+  actuators.forEach((rod, i) => {
+    rod.scale.y = 1 + Math.sin(t * 1.1 + i) * 0.035;
+  });
+
+  stars.rotation.y = t * 0.008;
+
+  controls.update();
+  renderer.render(scene, camera);
+}
+animate();
+
+window.addEventListener("resize", () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+</script>
+</body>
+</html>
