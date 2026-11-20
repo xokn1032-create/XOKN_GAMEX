@@ -1,0 +1,470 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Opal Star Spark - Mirrored Fangs</title>
+<style>
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  overflow: hidden;
+  background: #050611;
+  color: #eafaff;
+  font-family: Arial, sans-serif;
+}
+#hud {
+  position: fixed;
+  top: 18px;
+  left: 18px;
+  pointer-events: none;
+}
+h2 {
+  margin: 0;
+  font-size: 17px;
+  letter-spacing: 3px;
+  color: #b9faff;
+  text-shadow: 0 0 12px #00d9ff;
+}
+p {
+  color: #9b9bbd;
+  font-size: 11px;
+  letter-spacing: 2px;
+}
+#hint {
+  position: fixed;
+  bottom: 16px;
+  left: 18px;
+  color: #8b91b5;
+  font-size: 11px;
+}
+</style>
+</head>
+<body>
+
+<div id="hud">
+  <h2>OPAL STAR SPARK</h2>
+  <p>MIRRORED CYBERNETIC FANGS / 001</p>
+</div>
+<div id="hint">DRAG TO ORBIT · SCROLL TO ZOOM</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from
+  "three/addons/controls/OrbitControls.js";
+
+// SCENE
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x050611);
+scene.fog = new THREE.FogExp2(0x050611, 0.035);
+
+const camera = new THREE.PerspectiveCamera(
+  42, innerWidth / innerHeight, 0.1, 100
+);
+camera.position.set(3.5, 2.4, 6.5);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.2;
+document.body.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.target.set(0, -0.45, 0);
+
+// LIGHTING
+scene.add(new THREE.AmbientLight(0x9aabff, 0.8));
+
+function addLight(color, intensity, position) {
+  const light = new THREE.PointLight(color, intensity, 12);
+  light.position.set(...position);
+  scene.add(light);
+}
+
+addLight(0x00ddff, 30, [3, 2, 3]);
+addLight(0xff22cc, 25, [-3, 0, -2]);
+addLight(0x8b4dff, 20, [0, -3, 1]);
+
+// MATERIALS
+const titanium = new THREE.MeshStandardMaterial({
+  color: 0x718097,
+  metalness: 0.95,
+  roughness: 0.2
+});
+
+const chrome = new THREE.MeshStandardMaterial({
+  color: 0xd5e9f5,
+  metalness: 0.98,
+  roughness: 0.12
+});
+
+const darkMetal = new THREE.MeshStandardMaterial({
+  color: 0x11182a,
+  metalness: 0.9,
+  roughness: 0.3
+});
+
+const black = new THREE.MeshStandardMaterial({
+  color: 0x050a17,
+  metalness: 0.75,
+  roughness: 0.25
+});
+
+const rainbow = [
+  0xff287c,
+  0xff8b35,
+  0xffe65a,
+  0x54ffb5,
+  0x27dfff,
+  0x9b62ff
+];
+
+const glow = rainbow.map(color =>
+  new THREE.MeshStandardMaterial({
+    color,
+    emissive: color,
+    emissiveIntensity: 2.1,
+    metalness: 0.4,
+    roughness: 0.2
+  })
+);
+
+const opalMaterial = new THREE.MeshPhysicalMaterial({
+  color: 0x9c75ff,
+  emissive: 0x5e1aff,
+  emissiveIntensity: 1.8,
+  metalness: 0.35,
+  roughness: 0.1,
+  clearcoat: 1
+});
+
+// MAIN GROUP
+const root = new THREE.Group();
+scene.add(root);
+
+function addMesh(geometry, material, parent, position = [0,0,0]) {
+  const object = new THREE.Mesh(geometry, material);
+  object.position.set(...position);
+  parent.add(object);
+  return object;
+}
+
+function addTube(points, radius, material, parent) {
+  const curve = new THREE.CatmullRomCurve3(
+    points.map(p => new THREE.Vector3(...p))
+  );
+  const tube = new THREE.TubeGeometry(
+    curve, 48, radius, 10, false
+  );
+  return addMesh(tube, material, parent);
+}
+
+// CENTRAL MOUTH HOUSING
+const mouth = new THREE.Group();
+root.add(mouth);
+
+addMesh(
+  new THREE.BoxGeometry(0.95, 0.7, 0.52),
+  darkMetal,
+  mouth,
+  [0, -0.05, 0]
+);
+
+const centerArmor = addMesh(
+  new THREE.OctahedronGeometry(0.48, 1),
+  titanium,
+  mouth,
+  [0, -0.05, 0.05]
+);
+centerArmor.scale.set(1.0, 0.8, 0.75);
+
+// Central opal lens
+addMesh(
+  new THREE.TorusGeometry(0.25, 0.055, 10, 40),
+  chrome,
+  mouth,
+  [0, -0.05, 0.34]
+);
+
+const centralOpal = addMesh(
+  new THREE.IcosahedronGeometry(0.18, 2),
+  opalMaterial,
+  mouth,
+  [0, -0.05, 0.39]
+);
+
+// Central decorative light
+const centerLight = new THREE.PointLight(0x8b45ff, 3, 3);
+centerLight.position.set(0, -0.05, 0.6);
+mouth.add(centerLight);
+
+// CENTRAL ARMOR DETAILS
+for (const side of [-1, 1]) {
+  const panel = addMesh(
+    new THREE.BoxGeometry(0.18, 0.46, 0.12),
+    chrome,
+    mouth,
+    [side * 0.36, -0.04, 0.25]
+  );
+  panel.rotation.z = side * -0.15;
+
+  addMesh(
+    new THREE.SphereGeometry(0.065, 12, 10),
+    glow[side < 0 ? 1 : 4],
+    mouth,
+    [side * 0.25, 0.12, 0.38]
+  );
+}
+
+// CREATE ONE FANG, THEN MIRROR IT
+const fangGroups = [];
+const fangOpals = [];
+const fangNodes = [];
+
+function createFang(side) {
+  const group = new THREE.Group();
+
+  // Positive and negative X create mirrored silhouettes.
+  group.position.set(side * 0.42, -0.20, 0.08);
+  group.scale.x = side;
+  root.add(group);
+
+  // Mounting socket
+  addMesh(
+    new THREE.CylinderGeometry(0.28, 0.34, 0.30, 12),
+    darkMetal,
+    group,
+    [0, 0, 0]
+  ).rotation.x = Math.PI / 2;
+
+  // Circular bearing
+  const bearing = addMesh(
+    new THREE.TorusGeometry(0.25, 0.045, 10, 36),
+    chrome,
+    group,
+    [0, 0, 0.19]
+  );
+
+  const bearingCore = addMesh(
+    new THREE.SphereGeometry(0.14, 16, 12),
+    glow[side < 0 ? 0 : 4],
+    group,
+    [0, 0, 0.23]
+  );
+
+  // Curved fang shell
+  const fangCurve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0.00, -0.12, 0.05),
+    new THREE.Vector3(0.13, -0.35, 0.08),
+    new THREE.Vector3(0.29, -0.68, 0.10),
+    new THREE.Vector3(0.34, -1.02, 0.12),
+    new THREE.Vector3(0.25, -1.35, 0.13),
+    new THREE.Vector3(0.04, -1.60, 0.14)
+  ]);
+
+  const shell = addMesh(
+    new THREE.TubeGeometry(fangCurve, 64, 0.145, 12, false),
+    new THREE.MeshPhysicalMaterial({
+      color: 0xaebfdf,
+      metalness: 0.88,
+      roughness: 0.17,
+      clearcoat: 1,
+      clearcoatRoughness: 0.1,
+      emissive: 0x32105e,
+      emissiveIntensity: 0.25
+    }),
+    group
+  );
+
+  // Metallic edge detail
+  addMesh(
+    new THREE.TubeGeometry(fangCurve, 64, 0.022, 8, false),
+    chrome,
+    group
+  );
+
+  // Rainbow energy channel
+  const energyCurve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0.09, -0.24, 0.20),
+    new THREE.Vector3(0.23, -0.49, 0.22),
+    new THREE.Vector3(0.34, -0.80, 0.23),
+    new THREE.Vector3(0.34, -1.10, 0.23),
+    new THREE.Vector3(0.22, -1.38, 0.23),
+    new THREE.Vector3(0.04, -1.57, 0.22)
+  ]);
+
+  const energy = addMesh(
+    new THREE.TubeGeometry(energyCurve, 48, 0.022, 8, false),
+    glow[side < 0 ? 4 : 2],
+    group
+  );
+
+  // Layered armor panels
+  const armorParts = [
+    [0.10, -0.30, 0.02],
+    [0.24, -0.63, 0.02],
+    [0.32, -0.98, 0.02],
+    [0.25, -1.28, 0.02]
+  ];
+
+  armorParts.forEach((position, i) => {
+    const plate = addMesh(
+      new THREE.OctahedronGeometry(0.17, 0),
+      i % 2 === 0 ? chrome : titanium,
+      group,
+      position
+    );
+
+    plate.scale.set(0.55, 1.1, 0.35);
+    plate.rotation.z = -0.4;
+  });
+
+  // Small opal accent near the mount
+  const opal = addMesh(
+    new THREE.IcosahedronGeometry(0.09, 1),
+    opalMaterial,
+    group,
+    [0.17, -0.08, 0.29]
+  );
+
+  fangOpals.push(opal);
+
+  // Color nodes along the fang base
+  for (let i = 0; i < 3; i++) {
+    const node = addMesh(
+      new THREE.SphereGeometry(0.045, 10, 8),
+      glow[(i + (side < 0 ? 0 : 3)) % 6],
+      group,
+      [
+        0.12 + i * 0.06,
+        -0.18 - i * 0.12,
+        0.27
+      ]
+    );
+
+    fangNodes.push(node);
+  }
+
+  // Small support struts
+  addTube([
+    [0.12, -0.08, -0.04],
+    [0.35, -0.18, -0.03],
+    [0.38, -0.40, 0]
+  ], 0.045, titanium, group);
+
+  fangGroups.push(group);
+  return group;
+}
+
+createFang(-1);
+createFang(1);
+
+// Decorative top plates
+for (const side of [-1, 1]) {
+  const brow = addMesh(
+    new THREE.BoxGeometry(0.48, 0.13, 0.34),
+    chrome,
+    root,
+    [side * 0.52, 0.37, 0.02]
+  );
+  brow.rotation.z = side * -0.3;
+
+  const accent = addMesh(
+    new THREE.BoxGeometry(0.28, 0.035, 0.08),
+    glow[side < 0 ? 4 : 1],
+    root,
+    [side * 0.52, 0.45, 0.19]
+  );
+  accent.rotation.z = side * -0.3;
+}
+
+// STAR FIELD
+const positions = [];
+
+for (let i = 0; i < 500; i++) {
+  positions.push(
+    (Math.random() - 0.5) * 25,
+    (Math.random() - 0.5) * 18,
+    (Math.random() - 0.5) * 25
+  );
+}
+
+const starGeometry = new THREE.BufferGeometry();
+starGeometry.setAttribute(
+  "position",
+  new THREE.Float32BufferAttribute(positions, 3)
+);
+
+const stars = new THREE.Points(
+  starGeometry,
+  new THREE.PointsMaterial({
+    color: 0x9acbff,
+    size: 0.035,
+    transparent: true,
+    opacity: 0.8
+  })
+);
+scene.add(stars);
+
+// ANIMATION
+const clock = new THREE.Clock();
+
+function animate() {
+  requestAnimationFrame(animate);
+
+  const t = clock.getElapsedTime();
+
+  root.rotation.y = Math.sin(t * 0.35) * 0.10;
+  root.rotation.x = Math.sin(t * 0.25) * 0.025;
+
+  centralOpal.rotation.y = t * 0.65;
+  centralOpal.rotation.x = t * 0.3;
+
+  const pulse = 1.5 + Math.sin(t * 3) * 0.8;
+  centralOpal.material.emissiveIntensity = pulse;
+  centerLight.intensity = 2.5 + Math.sin(t * 3) * 1.2;
+
+  fangOpals.forEach((opal, i) => {
+    opal.rotation.y = t * (i % 2 ? 0.7 : -0.7);
+  });
+
+  fangNodes.forEach((node, i) => {
+    node.scale.setScalar(
+      1 + Math.sin(t * 3 + i) * 0.16
+    );
+  });
+
+  fangGroups.forEach((fang, i) => {
+    fang.rotation.z = Math.sin(t * 0.8 + i * Math.PI) * 0.025;
+  });
+
+  stars.rotation.y = t * 0.008;
+
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+animate();
+
+// RESIZE
+window.addEventListener("resize", () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+</script>
+</body>
+</html>
