@@ -1,1 +1,913 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Opal Star Spark - Upper Body Assembly</title>
+<style>
+body {
+  margin:0;
+  overflow:hidden;
+  background:#050612;
+  font-family:Arial,sans-serif;
+}
+#hud {
+  position:fixed;
+  top:14px;
+  left:14px;
+  padding:12px 16px;
+  color:#dceaff;
+  background:#10152add;
+  border:1px solid #6c72ff77;
+  border-radius:12px;
+  font-size:12px;
+  line-height:1.7;
+  pointer-events:none;
+}
+#hud strong { color:#8ffaff; }
+#help {
+  position:fixed;
+  bottom:14px;
+  left:14px;
+  color:#aebedc;
+  font-size:11px;
+  background:#10152acc;
+  padding:9px 12px;
+  border-radius:9px;
+  pointer-events:none;
+}
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+
+<div id="hud">
+<strong>OPAL STAR SPARK</strong><br>
+UPPER BODY ASSEMBLY · 001<br>
+HEAD + NECK + THORAX<br>
+<text>8 LEG SOCKETS · 4 HEAD CONNECTIONS</text>
+</div>
+
+<div id="help">
+Drag: rotate · Scroll: zoom · Right drag: pan
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// ================================================
+// SCENE
+// ================================================
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x050612);
+scene.fog = new THREE.FogExp2(0x050612,0.018);
+
+const camera = new THREE.PerspectiveCamera(
+  43,innerWidth/innerHeight,0.1,100
+);
+camera.position.set(5.5,4.2,7.8);
+
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth,innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.3;
+document.body.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera,renderer.domElement);
+controls.enableDamping = true;
+controls.target.set(0,0.1,0.5);
+
+scene.add(new THREE.AmbientLight(0x8292c9,1.2));
+
+function pointLight(color,intensity,position) {
+  const l = new THREE.PointLight(color,intensity,16);
+  l.position.set(...position);
+  scene.add(l);
+}
+pointLight(0x35eaff,45,[4,4,4]);
+pointLight(0xc13dff,35,[-4,2,-2]);
+pointLight(0xff55bd,25,[0,-3,2]);
+pointLight(0xffffff,14,[0,5,-3]);
+
+// ================================================
+// MATERIALS
+// ================================================
+
+const titanium = new THREE.MeshStandardMaterial({
+  color:0x899ab8,metalness:0.92,roughness:0.22
+});
+const darkMetal = new THREE.MeshStandardMaterial({
+  color:0x11182c,metalness:0.86,roughness:0.3
+});
+const chrome = new THREE.MeshStandardMaterial({
+  color:0xd9edff,metalness:1,roughness:0.12
+});
+const black = new THREE.MeshStandardMaterial({
+  color:0x030711,metalness:0.8,roughness:0.2
+});
+const opal = new THREE.MeshPhysicalMaterial({
+  color:0x9d7aff,
+  emissive:0x5520ff,
+  emissiveIntensity:1.8,
+  metalness:0.2,
+  roughness:0.12,
+  clearcoat:1
+});
+
+const rainbow = [
+  0xff3c9e,0xffa52f,0xeaff48,
+  0x35ffe0,0x3995ff,0xc15aff
+];
+
+const assembly = new THREE.Group();
+scene.add(assembly);
+
+// ================================================
+// HELPER FUNCTIONS
+// ================================================
+
+function addMesh(parent,geometry,material,x,y,z,sx=1,sy=1,sz=1) {
+  const mesh = new THREE.Mesh(geometry,material);
+  mesh.position.set(x,y,z);
+  mesh.scale.set(sx,sy,sz);
+  parent.add(mesh);
+  return mesh;
+}
+
+function cylinderZ(parent,r1,r2,depth,material,x,y,z) {
+  const mesh = new THREE.Mesh(
+    new THREE.CylinderGeometry(r1,r2,depth,20),
+    material
+  );
+  mesh.rotation.x=Math.PI/2;
+  mesh.position.set(x,y,z);
+  parent.add(mesh);
+  return mesh;
+}
+
+function torusZ(parent,radius,tube,material,x,y,z) {
+  const mesh = new THREE.Mesh(
+    new THREE.TorusGeometry(radius,tube,12,48),
+    material
+  );
+  mesh.position.set(x,y,z);
+  parent.add(mesh);
+  return mesh;
+}
+
+function glowMaterial(color) {
+  return new THREE.MeshStandardMaterial({
+    color,
+    emissive:color,
+    emissiveIntensity:2
+  });
+}
+
+// ================================================
+// 1. THORAX
+// Center position: Z = -1.70
+// Front connector points toward +Z.
+// ================================================
+
+const thorax = new THREE.Group();
+thorax.position.z=-1.70;
+assembly.add(thorax);
+
+// Main chassis
+addMesh(
+  thorax,
+  new THREE.IcosahedronGeometry(0.9,2),
+  titanium,0,0,0,1.1,0.72,1.25
+);
+
+// Dark central core
+addMesh(
+  thorax,
+  new THREE.BoxGeometry(1.2,0.55,1.7),
+  darkMetal,0,0,0
+);
+
+// Top armor
+addMesh(
+  thorax,
+  new THREE.OctahedronGeometry(0.7,1),
+  titanium,0,0.55,0,1,0.25,1.1
+);
+
+// Central reactor chamber
+cylinderZ(thorax,0.48,0.48,0.34,darkMetal,0,0.25,0);
+
+torusZ(
+  thorax,0.43,0.065,chrome,
+  0,0.25,0.18
+);
+
+torusZ(
+  thorax,0.33,0.03,glowMaterial(0x39eaff),
+  0,0.25,0.20
+);
+
+const thoraxCore = addMesh(
+  thorax,
+  new THREE.OctahedronGeometry(0.30,1),
+  opal,0,0.25,0.23,1,0.8,1.2
+);
+
+// Eight leg sockets: four per side
+const legSockets=[];
+
+for(const side of [-1,1]) {
+  for(let i=0;i<4;i++) {
+    const z=0.90-i*0.60;
+
+    const socket = new THREE.Group();
+    socket.position.set(side*0.95,0,z);
+    thorax.add(socket);
+
+    addMesh(
+      socket,
+      new THREE.SphereGeometry(0.24,16,12),
+      darkMetal,0,0,0,1,1,1
+    );
+
+    const bearing = new THREE.Mesh(
+      new THREE.TorusGeometry(0.23,0.055,10,32),
+      chrome
+    );
+    bearing.rotation.y=Math.PI/2;
+    socket.add(bearing);
+
+    addMesh(
+      socket,
+      new THREE.SphereGeometry(0.12,12,10),
+      glowMaterial(rainbow[i]),
+      side*0.12,0,0
+    );
+
+    legSockets.push(socket);
+  }
+}
+
+// Thorax front connector shaft
+cylinderZ(
+  thorax,0.24,0.24,0.50,
+  chrome,0,0.02,1.35
+);
+
+cylinderZ(
+  thorax,0.20,0.20,0.12,
+  darkMetal,0,0.02,1.57
+);
+
+torusZ(
+  thorax,0.25,0.045,glowMaterial(0x35eaff),
+  0,0.02,1.18
+);
+
+// Side armor plates
+for(const side of [-1,1]) {
+  for(let i=0;i<3;i++) {
+    addMesh(
+      thorax,
+      new THREE.OctahedronGeometry(0.36,1),
+      titanium,
+      side*0.83,0.15,0.5-i*0.65,
+      0.55,0.75,0.9
+    );
+  }
+}
+
+// ================================================
+// 2. NECK
+// Rear receiver centered at world Z = 0.10.
+// Front head yoke centered at world Z = 1.10.
+// ================================================
+
+const neck = new THREE.Group();
+assembly.add(neck);
+
+// Rear receiver surrounds thorax shaft.
+cylinderZ(
+  neck,0.38,0.38,0.54,
+  titanium,0,0.02,0.10
+);
+
+cylinderZ(
+  neck,0.29,0.29,0.08,
+  darkMetal,0,0.02,0.39
+);
+
+torusZ(
+  neck,0.31,0.045,chrome,
+  0,0.02,-0.20
+);
+
+torusZ(
+  neck,0.29,0.025,glowMaterial(0x35eaff),
+  0,0.02,0.38
+);
+
+// Central spine
+const neckSpine = addMesh(
+  neck,
+  new THREE.CylinderGeometry(0.25,0.32,1.0,12),
+  darkMetal,0,0.02,0.62
+);
+neckSpine.rotation.x=Math.PI/2;
+
+const neckShaft = addMesh(
+  neck,
+  new THREE.CylinderGeometry(0.16,0.18,0.90,16),
+  chrome,0,0.02,0.62
+);
+neckShaft.rotation.x=Math.PI/2;
+
+// Neck reactor
+const neckCore = addMesh(
+  neck,
+  new THREE.OctahedronGeometry(0.25,1),
+  opal,0,0.24,0.62,1,0.8,1.2
+);
+
+// Bearing rings
+const neckBearings=[];
+
+for(let i=0;i<3;i++) {
+  const z=0.30+i*0.32;
+  const group=new THREE.Group();
+  group.position.set(0,0.02,z);
+  neck.add(group);
+
+  group.add(new THREE.Mesh(
+    new THREE.TorusGeometry(0.32,0.055,12,40),
+    chrome
+  ));
+
+  group.add(new THREE.Mesh(
+    new THREE.TorusGeometry(0.25,0.025,8,40),
+    glowMaterial(rainbow[i*2])
+  ));
+
+  neckBearings.push(group);
+}
+
+// Side conduits
+for(const side of [-1,1]) {
+  for(let i=0;i<3;i++) {
+    const x=side*(0.20+i*0.055);
+
+    const curve=new THREE.CatmullRomCurve3([
+      new THREE.Vector3(x,0.23,0.12),
+      new THREE.Vector3(x*1.2,0.31,0.43),
+      new THREE.Vector3(x*1.2,0.31,0.80),
+      new THREE.Vector3(x,0.23,1.05)
+    ]);
+
+    neck.add(new THREE.Mesh(
+      new THREE.TubeGeometry(curve,32,0.018,7,false),
+      glowMaterial(rainbow[i*2])
+    ));
+  }
+}
+
+// Front adapter yoke at Z = 1.10
+const yoke = new THREE.Group();
+yoke.position.set(0,0.02,1.10);
+neck.add(yoke);
+
+// Cross-shaped structural frame
+addMesh(
+  yoke,
+  new THREE.BoxGeometry(1.90,0.16,0.20),
+  titanium,0,-0.03,0
+);
+
+addMesh(
+  yoke,
+  new THREE.BoxGeometry(0.16,0.90,0.20),
+  titanium,0,-0.03,0
+);
+
+addMesh(
+  yoke,
+  new THREE.BoxGeometry(0.55,0.55,0.22),
+  darkMetal,0,-0.03,0.12
+);
+
+// Four adapter pins
+const pinPositions=[
+  [-0.78,0.32],
+  [ 0.78,0.32],
+  [-0.78,-0.38],
+  [ 0.78,-0.38]
+];
+
+const pins=[];
+
+for(let i=0;i<4;i++) {
+  const [x,y]=pinPositions[i];
+  const pinGroup=new THREE.Group();
+  pinGroup.position.set(x,y,0.12);
+  yoke.add(pinGroup);
+
+  cylinderZ(
+    pinGroup,0.22,0.24,0.12,
+    darkMetal,0,0,0
+  );
+
+  cylinderZ(
+    pinGroup,0.20,0.20,0.08,
+    chrome,0,0,0.10
+  );
+
+  cylinderZ(
+    pinGroup,0.17,0.17,0.24,
+    titanium,0,0,0.24
+  );
+
+  addMesh(
+    pinGroup,
+    new THREE.SphereGeometry(0.16,16,12),
+    opal,0,0,0.38,1,1,0.5
+  );
+
+  torusZ(
+    pinGroup,0.19,0.018,glowMaterial(rainbow[i]),
+    0,0,0.15
+  );
+
+  pins.push(pinGroup);
+}
+
+// ================================================
+// 3. SPIDER HEAD
+// Rear face is at Z = 1.40.
+// Front eyes and fangs face +Z.
+// ================================================
+
+const head = new THREE.Group();
+head.position.z=2.12;
+assembly.add(head);
+
+// Main shell
+addMesh(
+  head,
+  new THREE.IcosahedronGeometry(0.85,2),
+  titanium,0,0,0,1.12,0.78,0.85
+);
+
+// Inner dark head
+addMesh(
+  head,
+  new THREE.SphereGeometry(0.72,24,20),
+  darkMetal,0,0,0,1.1,0.75,0.85
+);
+
+// Forehead armor
+addMesh(
+  head,
+  new THREE.OctahedronGeometry(0.48,1),
+  titanium,0,0.54,0.02,1,0.32,0.8
+);
+
+// Forehead opal
+const forehead = addMesh(
+  head,
+  new THREE.OctahedronGeometry(0.24,1),
+  opal,0,0.72,0.18,1,1,1
+);
+
+// Three mechanical eyes
+const eyes=[];
+
+function makeEye(x,y,z,size,color) {
+  const eye=new THREE.Group();
+  eye.position.set(x,y,z);
+  head.add(eye);
+
+  const housing=addMesh(
+    eye,
+    new THREE.SphereGeometry(size,24,18),
+    darkMetal,0,0,0,1.12,1,0.55
+  );
+
+  addMesh(
+    eye,
+    new THREE.TorusGeometry(size*0.85,0.045,10,40),
+    chrome,0,0,0.03
+  );
+
+  const iris=addMesh(
+    eye,
+    new THREE.TorusGeometry(size*0.60,0.025,8,32),
+    glowMaterial(color),0,0,0.08
+  );
+
+  const lens=addMesh(
+    eye,
+    new THREE.SphereGeometry(size*0.56,20,16),
+    opal,0,0,0.12,1,1,0.45
+  );
+
+  addMesh(
+    eye,
+    new THREE.SphereGeometry(size*0.22,16,12),
+    black,0,0,0.17,1,1,0.5
+  );
+
+  for(let i=0;i<6;i++) {
+    const a=i*Math.PI/3;
+    addMesh(
+      eye,
+      new THREE.SphereGeometry(0.035,8,8),
+      glowMaterial(rainbow[i]),
+      Math.cos(a)*size*0.78,
+      Math.sin(a)*size*0.78,
+      0.09
+    );
+  }
+
+  eyes.push({eye,iris,lens});
+}
+
+makeEye(-0.48,0.18,0.64,0.29,0x35eaff);
+makeEye( 0.00,0.37,0.70,0.35,0xc15aff);
+makeEye( 0.48,0.18,0.64,0.29,0xff3c9e);
+
+// Mirrored mechanical fangs
+const fangs=[];
+
+for(const side of [-1,1]) {
+  const fang=new THREE.Group();
+  fang.position.set(side*0.40,-0.42,0.67);
+  fang.rotation.z=side*-0.18;
+  head.add(fang);
+
+  addMesh(
+    fang,
+    new THREE.SphereGeometry(0.19,16,12),
+    darkMetal,0,0,0,1,1,0.65
+  );
+
+  const fangShell=addMesh(
+    fang,
+    new THREE.ConeGeometry(0.13,0.62,8),
+    titanium,side*0.07,-0.25,0.12
+  );
+  fangShell.rotation.z=side*-0.15;
+
+  const fangCore=addMesh(
+    fang,
+    new THREE.ConeGeometry(0.035,0.45,6),
+    glowMaterial(0x35eaff),
+    side*0.07,-0.26,0.19
+  );
+  fangCore.rotation.z=side*-0.15;
+
+  torusZ(
+    fang,0.16,0.035,chrome,
+    0,0,0.05
+  );
+
+  fangs.push(fang);
+}
+
+// Head side armor
+for(const side of [-1,1]) {
+  addMesh(
+    head,
+    new THREE.OctahedronGeometry(0.30,1),
+    titanium,side*0.85,0.02,0.08,
+    0.65,0.85,0.8
+  );
+}
+
+// Four rear head sockets.
+// Head center is Z=2.12; rear surface is approximately Z=1.40.
+// Socket openings face -Z.
+const headSocketPositions=[
+  [-0.78,0.32],
+  [ 0.78,0.32],
+  [-0.78,-0.38],
+  [ 0.78,-0.38]
+];
+
+for(let i=0;i<4;i++) {
+  const [x,y]=headSocketPositions[i];
+
+  cylinderZ(
+    head,0.24,0.24,0.10,
+    darkMetal,x,y,-0.69
+  );
+
+  torusZ(
+    head,0.20,0.035,chrome,
+    x,y,-0.75
+  );
+
+  cylinderZ(
+    head,0.18,0.18,0.035,
+    glowMaterial(rainbow[i]),
+    x,y,-0.77
+  );
+}
+
+// ================================================
+// 4. ASSEMBLY DETAILS
+// ================================================
+
+// Decorative spine lines on thorax
+for(let i=0;i<5;i++) {
+  const x=(i-2)*0.15;
+  const curve=new THREE.CatmullRomCurve3([
+    new THREE.Vector3(x,0.62,0.7),
+    new THREE.Vector3(x*1.2,0.65,0.2),
+    new THREE.Vector3(x,0.55,-0.7)
+  ]);
+
+  thorax.add(new THREE.Mesh(
+    new THREE.TubeGeometry(curve,24,0.014,6,false),
+    glowMaterial(rainbow[i])
+  ));
+}
+
+
+// ================================================
+// 7. REAR ABDOMEN MODULE
+// Attaches behind the thorax, extending toward -Z.
+// ================================================
+
+const abdomen = new THREE.Group();
+
+// Thorax center is at Z = -1.70.
+// Its rear connection is approximately Z = -3.05.
+abdomen.position.set(0, 0, -3.05);
+assembly.add(abdomen);
+
+// Thorax rear connector shaft
+cylinderZ(
+  thorax, 0.22, 0.22, 0.48,
+  chrome, 0, 0, -1.35
+);
+
+cylinderZ(
+  thorax, 0.26, 0.26, 0.09,
+  darkMetal, 0, 0, -1.58
+);
+
+torusZ(
+  thorax, 0.25, 0.035,
+  glowMaterial(0x35eaff),
+  0, 0, -1.60
+);
+
+// Abdomen front receiver collar
+cylinderZ(
+  abdomen, 0.38, 0.38, 0.30,
+  titanium, 0, 0, 0
+);
+
+cylinderZ(
+  abdomen, 0.29, 0.29, 0.10,
+  darkMetal, 0, 0, 0.19
+);
+
+torusZ(
+  abdomen, 0.34, 0.045,
+  chrome, 0, 0, 0.17
+);
+
+torusZ(
+  abdomen, 0.27, 0.025,
+  glowMaterial(0x35eaff),
+  0, 0, 0.24
+);
+
+// Main dark abdomen body
+addMesh(
+  abdomen,
+  new THREE.SphereGeometry(0.9, 32, 24),
+  darkMetal,
+  0, 0, -0.95,
+  1.05, 0.78, 1.45
+);
+
+// Faceted titanium outer shell
+const abdomenShell = addMesh(
+  abdomen,
+  new THREE.IcosahedronGeometry(0.95, 2),
+  titanium,
+  0, 0, -0.95,
+  1.08, 0.80, 1.48
+);
+
+// Top dorsal armor
+addMesh(
+  abdomen,
+  new THREE.OctahedronGeometry(0.65, 1),
+  titanium,
+  0, 0.65, -0.92,
+  1.15, 0.35, 1.25
+);
+
+// Side armor plates
+for (const side of [-1, 1]) {
+  for (let i = 0; i < 3; i++) {
+    const z = -0.35 - i * 0.58;
+
+    addMesh(
+      abdomen,
+      new THREE.OctahedronGeometry(0.35, 1),
+      titanium,
+      side * 0.86, 0.02, z,
+      0.55, 0.75, 0.85
+    );
+
+    addMesh(
+      abdomen,
+      new THREE.SphereGeometry(0.065, 12, 10),
+      chrome,
+      side * 0.94, 0.20, z
+    );
+  }
+}
+
+// Central abdomen reactor
+const abdomenReactor = new THREE.Group();
+abdomenReactor.position.set(0, 0.42, -0.95);
+abdomen.add(abdomenReactor);
+
+abdomenReactor.add(
+  new THREE.Mesh(
+    new THREE.TorusGeometry(0.40, 0.065, 12, 48),
+    chrome
+  )
+);
+
+abdomenReactor.add(
+  new THREE.Mesh(
+    new THREE.TorusGeometry(0.30, 0.025, 10, 48),
+    glowMaterial(0x35eaff)
+  )
+);
+
+const abdomenCore = new THREE.Mesh(
+  new THREE.OctahedronGeometry(0.30, 1),
+  opal
+);
+abdomenCore.scale.set(1, 0.8, 1.15);
+abdomenReactor.add(abdomenCore);
+
+// Six rainbow energy circuits
+const abdomenCircuits = [];
+
+for (let i = 0; i < 6; i++) {
+  const x = (i - 2.5) * 0.17;
+
+  const curve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(x * 0.4, 0.67, -0.10),
+    new THREE.Vector3(x, 0.77, -0.55),
+    new THREE.Vector3(x * 1.2, 0.72, -1.05),
+    new THREE.Vector3(x * 0.7, 0.62, -1.70)
+  ]);
+
+  const circuit = new THREE.Mesh(
+    new THREE.TubeGeometry(curve, 32, 0.018, 7, false),
+    glowMaterial(rainbow[i])
+  );
+
+  abdomen.add(circuit);
+  abdomenCircuits.push(circuit);
+}
+
+// Rear energy exhaust vents
+for (let i = 0; i < 5; i++) {
+  const x = (i - 2) * 0.25;
+
+  addMesh(
+    abdomen,
+    new THREE.BoxGeometry(0.15, 0.25, 0.08),
+    darkMetal,
+    x, 0.08, -2.35
+  );
+
+  addMesh(
+    abdomen,
+    new THREE.BoxGeometry(0.065, 0.16, 0.035),
+    glowMaterial(rainbow[i]),
+    x, 0.08, -2.40
+  );
+}
+
+// Small rear armor bolts
+for (const side of [-1, 1]) {
+  for (let i = 0; i < 4; i++) {
+    addMesh(
+      abdomen,
+      new THREE.SphereGeometry(0.045, 10, 8),
+      chrome,
+      side * 0.77,
+      0.48,
+      -0.25 - i * 0.48
+    );
+  }
+}
+
+// Abdomen animation
+function animateAbdomen(t) {
+  abdomenCore.rotation.y = t * 0.65;
+  abdomenCore.rotation.x = Math.sin(t) * 0.12;
+  abdomenReactor.rotation.z = t * 0.2;
+}
+
+
+// ================================================
+// 5. STARS
+// ================================================
+
+const starPositions=[];
+for(let i=0;i<650;i++) {
+  starPositions.push(
+    (Math.random()-0.5)*26,
+    (Math.random()-0.5)*18,
+    (Math.random()-0.5)*26
+  );
+}
+
+const starGeo=new THREE.BufferGeometry();
+starGeo.setAttribute(
+  'position',
+  new THREE.Float32BufferAttribute(starPositions,3)
+);
+
+scene.add(new THREE.Points(
+  starGeo,
+  new THREE.PointsMaterial({
+    color:0x9dbbff,size:0.025,
+    transparent:true,opacity:0.8
+  })
+));
+
+// ================================================
+// 6. ANIMATION
+// ================================================
+
+const clock=new THREE.Clock();
+
+function animate() {
+  requestAnimationFrame(animate);
+
+  const t=clock.getElapsedTime();
+
+  thoraxCore.rotation.y=t*0.45;
+  neckCore.rotation.y=t*0.7;
+  forehead.rotation.y=t*0.5;
+
+  neckBearings.forEach((b,i)=>{
+    b.rotation.z=Math.sin(t*1.2+i)*0.05;
+    b.rotation.y=t*(i%2===0?0.2:-0.2);
+  });
+
+  eyes.forEach((eye,i)=>{
+    eye.iris.rotation.z=t*(i%2===0?0.25:-0.25);
+    eye.lens.scale.z=0.45+Math.sin(t*2+i)*0.025;
+  });
+
+  pins.forEach((pin,i)=>{
+    pin.rotation.y=Math.sin(t*1.2+i)*0.02;
+  });
+
+  fangs.forEach((fang,i)=>{
+    fang.rotation.z=(i===0?-1:1)*0.18+
+      Math.sin(t*1.5+i)*0.015;
+  });
+
+  controls.update();
+  renderer.render(scene,camera);
+}
+
+animate();
+
+// ================================================
+// RESIZE
+// ================================================
+
+addEventListener('resize',()=>{
+  camera.aspect=innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+});
+</script>
+</body>
+</html>
