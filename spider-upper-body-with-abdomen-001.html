@@ -174,6 +174,206 @@ function glowMaterial(color) {
   });
 }
 
+
+// ============================================
+// OPAL STAR SPARK — EIGHT MECHANICAL LEGS
+// Attach directly to the thorax socket positions
+// ============================================
+
+const spiderLegs = new THREE.Group();
+spiderLegs.name = "EightMechanicalLegs";
+thorax.add(spiderLegs);
+
+const legMetal = new THREE.MeshStandardMaterial({
+  color: 0x8795ad,
+  metalness: 0.9,
+  roughness: 0.24
+});
+
+const legDark = new THREE.MeshStandardMaterial({
+  color: 0x172236,
+  metalness: 0.85,
+  roughness: 0.3
+});
+
+const legGlow = new THREE.MeshStandardMaterial({
+  color: 0x63eaff,
+  emissive: 0x20bfff,
+  emissiveIntensity: 2.2,
+  metalness: 0.35,
+  roughness: 0.2
+});
+
+const legOpal = new THREE.MeshStandardMaterial({
+  color: 0xb58cff,
+  emissive: 0x6633ff,
+  emissiveIntensity: 1.5,
+  metalness: 0.55,
+  roughness: 0.18
+});
+
+function legCylinder(a, b, radiusA, radiusB, material, parent) {
+  const start = new THREE.Vector3(...a);
+  const end = new THREE.Vector3(...b);
+  const direction = new THREE.Vector3().subVectors(end, start);
+  const length = direction.length();
+
+  const mesh = new THREE.Mesh(
+    new THREE.CylinderGeometry(radiusB, radiusA, length, 10),
+    material
+  );
+
+  mesh.position.copy(start).add(end).multiplyScalar(0.5);
+  mesh.quaternion.setFromUnitVectors(
+    new THREE.Vector3(0, 1, 0),
+    direction.normalize()
+  );
+
+  parent.add(mesh);
+  return mesh;
+}
+
+function legJoint(position, radius, parent) {
+  const joint = new THREE.Mesh(
+    new THREE.SphereGeometry(radius, 16, 12),
+    legDark
+  );
+  joint.position.set(...position);
+  parent.add(joint);
+
+  const ring = new THREE.Mesh(
+    new THREE.TorusGeometry(radius * 0.88, 0.035, 8, 24),
+    legGlow
+  );
+  ring.position.copy(joint.position);
+  ring.rotation.y = Math.PI / 2;
+  parent.add(ring);
+
+  const core = new THREE.Mesh(
+    new THREE.SphereGeometry(radius * 0.36, 12, 10),
+    legOpal
+  );
+  core.position.copy(joint.position);
+  parent.add(core);
+}
+
+function buildMechanicalLeg(side, row) {
+  const leg = new THREE.Group();
+  leg.name = `SpiderLeg_${side}_${row + 1}`;
+  spiderLegs.add(leg);
+
+  // Match the four socket rows on each side of the thorax.
+  const socketZ = [1.12, 0.38, -0.38, -1.12][row];
+  const socketX = side * 1.08;
+
+  leg.position.set(socketX, 0, socketZ);
+
+  // Each leg sweeps slightly forward or backward.
+  const sweep = [0.72, 0.24, -0.24, -0.72][row];
+
+  const socket = [0, 0, 0];
+  const shoulder = [side * 0.78, -0.08, sweep * 0.25];
+  const knee = [side * 1.62, -0.38, sweep * 0.9];
+  const ankle = [side * 2.08, -0.92, sweep * 1.45];
+  const footEnd = [side * 2.28, -1.28, sweep * 1.62];
+
+  // Socket adapter — seats inside the thorax mount.
+  legCylinder(
+    [0, 0, 0],
+    [side * 0.48, 0, 0],
+    0.23, 0.20, legDark, leg
+  );
+
+  // Shoulder bearing.
+  legJoint(shoulder, 0.25, leg);
+
+  // Upper armored segment.
+  legCylinder(
+    shoulder,
+    knee,
+    0.20, 0.14, legMetal, leg
+  );
+
+  // Upper segment armor shell.
+  const upperArmor = new THREE.Mesh(
+    new THREE.OctahedronGeometry(0.24, 0),
+    legMetal
+  );
+  upperArmor.position.set(
+    (shoulder[0] + knee[0]) / 2,
+    (shoulder[1] + knee[1]) / 2,
+    (shoulder[2] + knee[2]) / 2
+  );
+  upperArmor.scale.set(1, 0.75, 1.5);
+  leg.add(upperArmor);
+
+  // Knee bearing.
+  legJoint(knee, 0.22, leg);
+
+  // Lower articulated segment.
+  legCylinder(
+    knee,
+    ankle,
+    0.15, 0.105, legMetal, leg
+  );
+
+  // Exposed piston / energy conduit.
+  legCylinder(
+    [knee[0] - side * 0.10, knee[1] + 0.08, knee[2]],
+    [ankle[0] - side * 0.08, ankle[1] + 0.08, ankle[2]],
+    0.045, 0.035, legGlow, leg
+  );
+
+  // Ankle joint.
+  legJoint(ankle, 0.15, leg);
+
+  // Narrow foot connector.
+  legCylinder(
+    ankle,
+    footEnd,
+    0.105, 0.055, legDark, leg
+  );
+
+  // Pointed metallic claw.
+  const tip = new THREE.Mesh(
+    new THREE.ConeGeometry(0.105, 0.42, 8),
+    legMetal
+  );
+
+  tip.position.set(
+    footEnd[0] + side * 0.10,
+    footEnd[1] - 0.19,
+    footEnd[2] + sweep * 0.08
+  );
+
+  tip.rotation.z = side === 1 ? -0.22 : Math.PI + 0.22;
+  leg.add(tip);
+
+  // Glowing energy nodes along the leg.
+  const node = new THREE.Mesh(
+    new THREE.SphereGeometry(0.075, 12, 10),
+    legGlow
+  );
+  node.position.set(
+    (shoulder[0] + knee[0]) / 2,
+    (shoulder[1] + knee[1]) / 2,
+    (shoulder[2] + knee[2]) / 2
+  );
+  leg.add(node);
+
+  return leg;
+}
+
+// Four legs on the left and four on the right.
+for (const side of [-1, 1]) {
+  for (let row = 0; row < 4; row++) {
+    buildMechanicalLeg(side, row);
+  }
+}
+
+console.log("Attached 8 mechanical legs to thorax");
+
+
 // ================================================
 // 1. THORAX
 // Center position: Z = -1.70
