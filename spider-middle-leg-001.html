@@ -1,0 +1,460 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Opal Star Spark — Middle Leg Segment</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #050611;
+      color: #eafaff;
+      font-family: Arial, sans-serif;
+    }
+    #hud {
+      position: fixed;
+      top: 18px;
+      left: 18px;
+      z-index: 2;
+      pointer-events: none;
+    }
+    #hud h2 {
+      margin: 0;
+      font-size: 17px;
+      letter-spacing: 3px;
+      color: #b9faff;
+      text-shadow: 0 0 12px #00d9ff;
+    }
+    #hud p {
+      margin-top: 7px;
+      color: #9b9bbd;
+      font-size: 11px;
+      letter-spacing: 2px;
+    }
+    #hint {
+      position: fixed;
+      bottom: 16px;
+      left: 18px;
+      color: #8b91b5;
+      font-size: 11px;
+      letter-spacing: 1px;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="hud">
+    <h2>OPAL STAR SPARK</h2>
+    <p>MIDDLE LEG SEGMENT / PROTOTYPE 001</p>
+  </div>
+  <div id="hint">DRAG TO ORBIT · SCROLL TO ZOOM</div>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/"
+      }
+    }
+  </script>
+
+  <script type="module">
+    import * as THREE from "three";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x050611);
+    scene.fog = new THREE.FogExp2(0x050611, 0.035);
+
+    const camera = new THREE.PerspectiveCamera(
+      42, window.innerWidth / window.innerHeight, 0.1, 100
+    );
+    camera.position.set(3.8, 3.1, 5.8);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.25;
+    document.body.appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.target.set(0, 0, 0);
+    controls.minDistance = 3;
+    controls.maxDistance = 12;
+
+    // Lighting
+    scene.add(new THREE.AmbientLight(0x9aabff, 0.8));
+
+    function pointLight(color, intensity, position) {
+      const light = new THREE.PointLight(color, intensity, 12);
+      light.position.set(...position);
+      scene.add(light);
+      return light;
+    }
+
+    pointLight(0x00ddff, 28, [3, 2, 3]);
+    pointLight(0xff22cc, 24, [-3, 0, -2]);
+    pointLight(0x8b4dff, 20, [0, -3, 1]);
+
+    const metal = new THREE.MeshStandardMaterial({
+      color: 0x68758c,
+      metalness: 0.92,
+      roughness: 0.25
+    });
+
+    const darkMetal = new THREE.MeshStandardMaterial({
+      color: 0x171d30,
+      metalness: 0.88,
+      roughness: 0.32
+    });
+
+    const brightMetal = new THREE.MeshStandardMaterial({
+      color: 0xc4d9e8,
+      metalness: 0.95,
+      roughness: 0.17
+    });
+
+    const black = new THREE.MeshStandardMaterial({
+      color: 0x080d1a,
+      metalness: 0.7,
+      roughness: 0.3
+    });
+
+    const rainbow = [
+      0xff287c, 0xff8b35, 0xffe65a,
+      0x54ffb5, 0x27dfff, 0x9b62ff
+    ];
+
+    const glowMaterials = rainbow.map(color =>
+      new THREE.MeshStandardMaterial({
+        color,
+        emissive: color,
+        emissiveIntensity: 2.4,
+        metalness: 0.35,
+        roughness: 0.2
+      })
+    );
+
+    const root = new THREE.Group();
+    scene.add(root);
+
+    function addMesh(geometry, material, parent = root, position = [0, 0, 0]) {
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.position.set(...position);
+      parent.add(mesh);
+      return mesh;
+    }
+
+    function cylinderBetween(a, b, radiusA, radiusB, material, parent = root) {
+      const start = new THREE.Vector3(...a);
+      const end = new THREE.Vector3(...b);
+      const direction = new THREE.Vector3().subVectors(end, start);
+      const length = direction.length();
+
+      const mesh = new THREE.Mesh(
+        new THREE.CylinderGeometry(radiusB, radiusA, length, 12),
+        material
+      );
+
+      mesh.position.copy(start).add(end).multiplyScalar(0.5);
+      mesh.quaternion.setFromUnitVectors(
+        new THREE.Vector3(0, 1, 0),
+        direction.normalize()
+      );
+      parent.add(mesh);
+      return mesh;
+    }
+
+    function makeJoint(z, colorIndex, scale = 1) {
+      const joint = new THREE.Group();
+      joint.position.z = z;
+      root.add(joint);
+
+      const core = addMesh(
+        new THREE.SphereGeometry(0.29 * scale, 20, 16),
+        darkMetal,
+        joint
+      );
+
+      const outerRing = addMesh(
+        new THREE.TorusGeometry(0.34 * scale, 0.055 * scale, 10, 32),
+        brightMetal,
+        joint
+      );
+      outerRing.rotation.x = Math.PI / 2;
+
+      const innerRing = addMesh(
+        new THREE.TorusGeometry(0.22 * scale, 0.025 * scale, 8, 28),
+        glowMaterials[colorIndex],
+        joint
+      );
+      innerRing.rotation.x = Math.PI / 2;
+
+      addMesh(
+        new THREE.SphereGeometry(0.105 * scale, 16, 12),
+        glowMaterials[(colorIndex + 2) % 6],
+        joint
+      );
+
+      // Small circular bearing details
+      for (let i = 0; i < 6; i++) {
+        const angle = i / 6 * Math.PI * 2;
+        const bolt = addMesh(
+          new THREE.SphereGeometry(0.035 * scale, 8, 8),
+          brightMetal,
+          joint,
+          [
+            Math.cos(angle) * 0.34 * scale,
+            Math.sin(angle) * 0.34 * scale,
+            0.02
+          ]
+        );
+      }
+
+      return joint;
+    }
+
+    // End connectors: one attaches to the upper leg,
+    // the other attaches to the lower leg / foot.
+    makeJoint(-1.05, 0, 1.05);
+    makeJoint(1.05, 4, 0.95);
+
+    // Main internal structural beam, aligned along Z.
+    const beam = addMesh(
+      new THREE.CylinderGeometry(0.19, 0.25, 1.75, 8),
+      metal,
+      root,
+      [0, 0, 0]
+    );
+    beam.rotation.x = Math.PI / 2;
+
+    // Dark inner spine
+    const spine = addMesh(
+      new THREE.CylinderGeometry(0.115, 0.15, 1.9, 8),
+      black,
+      root
+    );
+    spine.rotation.x = Math.PI / 2;
+
+    // Central armor shell
+    const armor = addMesh(
+      new THREE.OctahedronGeometry(0.48, 1),
+      darkMetal,
+      root
+    );
+    armor.scale.set(0.9, 0.8, 1.9);
+
+    // Upper and lower armor plates
+    for (const z of [-0.53, 0.53]) {
+      const plate = addMesh(
+        new THREE.BoxGeometry(0.52, 0.13, 0.48),
+        brightMetal,
+        root,
+        [0, 0.31, z]
+      );
+      plate.rotation.y = z < 0 ? -0.2 : 0.2;
+
+      const darkPlate = addMesh(
+        new THREE.BoxGeometry(0.58, 0.07, 0.35),
+        darkMetal,
+        root,
+        [0, -0.29, z]
+      );
+      darkPlate.rotation.y = z < 0 ? 0.15 : -0.15;
+    }
+
+    // Side armor fins
+    for (const side of [-1, 1]) {
+      const fin = addMesh(
+        new THREE.OctahedronGeometry(0.3, 0),
+        metal,
+        root,
+        [side * 0.36, 0.02, 0]
+      );
+      fin.scale.set(0.5, 0.8, 2.3);
+      fin.rotation.y = side * 0.2;
+
+      // Armor screws
+      for (const z of [-0.62, 0, 0.62]) {
+        addMesh(
+          new THREE.SphereGeometry(0.045, 10, 8),
+          brightMetal,
+          root,
+          [side * 0.39, 0.18, z]
+        );
+      }
+    }
+
+    // Twin articulated hydraulic pistons
+    const pistons = [];
+
+    for (const side of [-1, 1]) {
+      const x = side * 0.27;
+
+      cylinderBetween(
+        [x, -0.12, -0.72],
+        [x, -0.12, 0.72],
+        0.105, 0.105, darkMetal
+      );
+
+      const rod = cylinderBetween(
+        [x, -0.12, -0.56],
+        [x, -0.12, 0.48],
+        0.045, 0.045, brightMetal
+      );
+
+      cylinderBetween(
+        [x, -0.12, -0.72],
+        [x, -0.12, -0.48],
+        0.12, 0.12, metal
+      );
+
+      cylinderBetween(
+        [x, -0.12, 0.48],
+        [x, -0.12, 0.72],
+        0.12, 0.12, metal
+      );
+
+      pistons.push(rod);
+    }
+
+    // Rainbow energy channels along the sides
+    const energyLines = [];
+
+    for (let i = 0; i < 6; i++) {
+      const side = i % 2 === 0 ? -1 : 1;
+      const x = side * (0.22 + Math.floor(i / 2) * 0.045);
+      const y = 0.22 + (i % 3) * 0.035;
+
+      const line = cylinderBetween(
+        [x, y, -0.65],
+        [x, y, 0.65],
+        0.018, 0.018, glowMaterials[i]
+      );
+      energyLines.push(line);
+    }
+
+    // Small luminous circuit nodes
+    const nodes = [];
+
+    for (let i = 0; i < 6; i++) {
+      const angle = i / 6 * Math.PI * 2;
+      const node = addMesh(
+        new THREE.SphereGeometry(0.075, 12, 10),
+        glowMaterials[i],
+        root,
+        [
+          Math.cos(angle) * 0.43,
+          Math.sin(angle) * 0.34,
+          (i % 2 === 0 ? -0.45 : 0.45)
+        ]
+      );
+      nodes.push(node);
+    }
+
+    // Small exposed gear discs on both sides
+    for (const side of [-1, 1]) {
+      const gear = addMesh(
+        new THREE.CylinderGeometry(0.16, 0.16, 0.09, 12),
+        brightMetal,
+        root,
+        [side * 0.43, 0, 0]
+      );
+      gear.rotation.z = Math.PI / 2;
+
+      const gearCore = addMesh(
+        new THREE.SphereGeometry(0.075, 12, 10),
+        glowMaterials[side === -1 ? 1 : 4],
+        root,
+        [side * 0.49, 0, 0]
+      );
+    }
+
+    // Small floating star particles
+    const starGeometry = new THREE.BufferGeometry();
+    const starPositions = [];
+
+    for (let i = 0; i < 500; i++) {
+      starPositions.push(
+        (Math.random() - 0.5) * 25,
+        (Math.random() - 0.5) * 18,
+        (Math.random() - 0.5) * 25
+      );
+    }
+
+    starGeometry.setAttribute(
+      "position",
+      new THREE.Float32BufferAttribute(starPositions, 3)
+    );
+
+    const stars = new THREE.Points(
+      starGeometry,
+      new THREE.PointsMaterial({
+        color: 0x9acbff,
+        size: 0.035,
+        transparent: true,
+        opacity: 0.8
+      })
+    );
+    scene.add(stars);
+
+    // Subtle display pedestal
+    const pedestal = new THREE.Mesh(
+      new THREE.TorusGeometry(1.5, 0.012, 8, 80),
+      new THREE.MeshBasicMaterial({
+        color: 0x153c68,
+        transparent: true,
+        opacity: 0.45
+      })
+    );
+    pedestal.rotation.x = Math.PI / 2;
+    pedestal.position.y = -1.25;
+    scene.add(pedestal);
+
+    // Animation
+    const clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const time = clock.getElapsedTime();
+
+      root.rotation.y = Math.sin(time * 0.35) * 0.12;
+      root.rotation.x = Math.sin(time * 0.25) * 0.035;
+
+      nodes.forEach((node, i) => {
+        const pulse = 1 + Math.sin(time * 3 + i) * 0.18;
+        node.scale.setScalar(pulse);
+      });
+
+      energyLines.forEach((line, i) => {
+        line.material.emissiveIntensity =
+          1.6 + Math.sin(time * 4 + i * 0.8) * 1.1;
+      });
+
+      pistons.forEach((rod, i) => {
+        rod.scale.z = 1 + Math.sin(time * 1.8 + i) * 0.035;
+      });
+
+      stars.rotation.y = time * 0.008;
+
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    animate();
+
+    window.addEventListener("resize", () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>
