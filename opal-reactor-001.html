@@ -1,0 +1,226 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Opal Star Spark — Reactor</title>
+<style>
+body{margin:0;overflow:hidden;background:#050713;color:white;font-family:monospace}
+#label{position:absolute;top:18px;left:18px;letter-spacing:3px;color:#9deaff}
+</style>
+</head>
+<body>
+<div id="label">OPAL STAR SPARK // REACTOR 001</div>
+<script type="module">
+import * as THREE from
+'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+import {OrbitControls} from
+'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js';
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x050713);
+
+const camera = new THREE.PerspectiveCamera(
+  45, innerWidth/innerHeight, 0.1, 100
+);
+camera.position.set(4,3.2,5.5);
+
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth,innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.35;
+document.body.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera,renderer.domElement);
+controls.enableDamping = true;
+
+scene.add(new THREE.AmbientLight(0x8999ff,1.2));
+
+function light(color,intensity,position){
+ const l=new THREE.PointLight(color,intensity,12);
+ l.position.set(...position);
+ scene.add(l);
+}
+light(0x32dfff,90,[3,2,3]);
+light(0xc044ff,75,[-3,-1,2]);
+light(0xff55b8,45,[0,3,-3]);
+
+const metal=new THREE.MeshStandardMaterial({
+ color:0x8293ad,metalness:.95,roughness:.22
+});
+const dark=new THREE.MeshStandardMaterial({
+ color:0x101b30,metalness:.85,roughness:.3
+});
+const glow=new THREE.MeshStandardMaterial({
+ color:0x65eaff,emissive:0x12aaff,
+ emissiveIntensity:2.5,metalness:.4
+});
+const opal=new THREE.MeshPhysicalMaterial({
+ color:0xd9c6ff,metalness:.4,roughness:.12,
+ transmission:.25,thickness:1.4,
+ emissive:0x6a24ff,emissiveIntensity:.55,
+ clearcoat:1,iridescence:1,iridescenceIOR:1.5
+});
+
+const core=new THREE.Group();
+scene.add(core);
+
+// Outer containment shell.
+const shell=new THREE.Mesh(
+ new THREE.IcosahedronGeometry(1.35,1),dark
+);
+shell.scale.set(1,1,.82);
+core.add(shell);
+
+// Six structural support bands.
+for(let i=0;i<6;i++){
+ const angle=i*Math.PI/3;
+ const support=new THREE.Mesh(
+  new THREE.BoxGeometry(.18,2.5,.2),metal
+ );
+ support.position.set(Math.cos(angle)*.9,0,Math.sin(angle)*.9);
+ support.rotation.z=angle;
+ core.add(support);
+}
+
+// Main reactor rings.
+const rings=[];
+for(let i=0;i<3;i++){
+ const ring=new THREE.Mesh(
+  new THREE.TorusGeometry(1.42+i*.12,.055,12,80),i===1?glow:metal
+ );
+ ring.rotation.x=Math.PI/2+(i-1)*.45;
+ ring.rotation.y=i*.55;
+ core.add(ring);
+ rings.push(ring);
+}
+
+// Inner energy chamber.
+const chamber=new THREE.Mesh(
+ new THREE.SphereGeometry(.83,32,24),
+ new THREE.MeshBasicMaterial({
+  color:0x653dff,transparent:true,opacity:.22
+ })
+);
+core.add(chamber);
+
+// Central opal crystal.
+const crystal=new THREE.Mesh(
+ new THREE.OctahedronGeometry(.65,1),opal
+);
+core.add(crystal);
+
+// Inner luminous heart.
+const heart=new THREE.Mesh(
+ new THREE.IcosahedronGeometry(.28,2),
+ new THREE.MeshBasicMaterial({color:0x8ffaff})
+);
+core.add(heart);
+
+// Energy orbit.
+const orbit=new THREE.Mesh(
+ new THREE.TorusGeometry(.98,.025,8,96),glow
+);
+orbit.rotation.x=.8;
+core.add(orbit);
+
+// Eight leg energy ports.
+for(let i=0;i<8;i++){
+ const angle=i*Math.PI/4;
+ const port=new THREE.Group();
+ port.position.set(
+  Math.cos(angle)*1.48,
+  0,
+  Math.sin(angle)*1.48
+ );
+ port.lookAt(
+  Math.cos(angle)*3,0,Math.sin(angle)*3
+ );
+
+ const collar=new THREE.Mesh(
+  new THREE.CylinderGeometry(.19,.19,.25,16),metal
+ );
+ collar.rotation.x=Math.PI/2;
+ port.add(collar);
+
+ const lightNode=new THREE.Mesh(
+  new THREE.SphereGeometry(.115,16,12),glow
+ );
+ lightNode.position.z=.16;
+ port.add(lightNode);
+
+ const outer=new THREE.Mesh(
+  new THREE.TorusGeometry(.17,.035,8,24),glow
+ );
+ outer.position.z=.13;
+ port.add(outer);
+
+ core.add(port);
+}
+
+// Decorative crystal nodes.
+for(let i=0;i<6;i++){
+ const angle=i*Math.PI/3;
+ const node=new THREE.Mesh(
+  new THREE.OctahedronGeometry(.13),
+  opal
+ );
+ node.position.set(
+  Math.cos(angle)*1.08,
+  Math.sin(angle)*1.08,
+  .35
+ );
+ core.add(node);
+}
+
+// Star field.
+const stars=new THREE.BufferGeometry();
+const positions=[];
+for(let i=0;i<900;i++){
+ positions.push(
+  (Math.random()-.5)*35,
+  (Math.random()-.5)*35,
+  (Math.random()-.5)*35
+ );
+}
+stars.setAttribute(
+ 'position',new THREE.Float32BufferAttribute(positions,3)
+);
+scene.add(new THREE.Points(
+ stars,new THREE.PointsMaterial({
+  color:0x91baff,size:.035
+ })
+));
+
+// Animation.
+const clock=new THREE.Clock();
+function animate(){
+ requestAnimationFrame(animate);
+ const t=clock.getElapsedTime();
+
+ crystal.rotation.y=t*.65;
+ crystal.rotation.x=t*.3;
+ heart.rotation.y=-t*1.4;
+ chamber.scale.setScalar(1+.035*Math.sin(t*2.5));
+
+ rings[0].rotation.z=t*.25;
+ rings[1].rotation.z=-t*.35;
+ rings[2].rotation.z=t*.2;
+
+ orbit.rotation.z=t*.5;
+
+ controls.update();
+ renderer.render(scene,camera);
+}
+animate();
+
+addEventListener('resize',()=>{
+ camera.aspect=innerWidth/innerHeight;
+ camera.updateProjectionMatrix();
+ renderer.setSize(innerWidth,innerHeight);
+});
+</script>
+</body>
+</html>
