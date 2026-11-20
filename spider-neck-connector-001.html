@@ -1,0 +1,295 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Opal Star Spark - Neck Connector</title>
+<style>
+body { margin:0; overflow:hidden; background:#050612; font-family:Arial; }
+#hud {
+ position:fixed; top:16px; left:16px; color:#dceaff;
+ background:#10152acc; border:1px solid #6c72ff66;
+ border-radius:12px; padding:12px 16px;
+ font-size:12px; letter-spacing:1px; pointer-events:none;
+}
+#hud strong { display:block; color:#8ffaff; margin-bottom:5px; }
+</style>
+<script type="importmap">
+{
+ "imports":{
+  "three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+ }
+}
+</script>
+</head>
+<body>
+<div id="hud">
+ <strong>OPAL STAR SPARK</strong>
+ NECK CONNECTOR · 001<br>
+ FRONT: +Z / HEAD<br>
+ REAR: -Z / THORAX
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x050612);
+scene.fog = new THREE.FogExp2(0x050612,0.025);
+
+const camera = new THREE.PerspectiveCamera(45,innerWidth/innerHeight,0.1,100);
+camera.position.set(3.8,3.0,5.5);
+
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth,innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.3;
+document.body.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera,renderer.domElement);
+controls.enableDamping = true;
+controls.target.set(0,0,0);
+
+scene.add(new THREE.AmbientLight(0x8292c9,1.2));
+
+function addLight(color,intensity,pos) {
+ const l = new THREE.PointLight(color,intensity,12);
+ l.position.set(...pos);
+ scene.add(l);
+}
+addLight(0x35eaff,35,[3,2,3]);
+addLight(0xc13dff,30,[-3,1,-2]);
+addLight(0xff55bd,20,[0,-2,-3]);
+
+const titanium = new THREE.MeshStandardMaterial({
+ color:0x899ab8,metalness:0.92,roughness:0.22
+});
+const darkMetal = new THREE.MeshStandardMaterial({
+ color:0x11182c,metalness:0.85,roughness:0.3
+});
+const chrome = new THREE.MeshStandardMaterial({
+ color:0xd9edff,metalness:1,roughness:0.12
+});
+const opal = new THREE.MeshPhysicalMaterial({
+ color:0x9d7aff,emissive:0x5520ff,
+ emissiveIntensity:1.7,metalness:0.2,
+ roughness:0.12,clearcoat:1
+});
+
+const rainbow = [
+ 0xff3c9e,0xffa52f,0xeaff48,
+ 0x35ffe0,0x3995ff,0xc15aff
+];
+
+const neck = new THREE.Group();
+scene.add(neck);
+
+// Cylinder axis is normally Y; rotate it to align with Z.
+function cylinderZ(parent,r1,r2,depth,material,z) {
+ const mesh = new THREE.Mesh(
+  new THREE.CylinderGeometry(r1,r2,depth,16),material
+ );
+ mesh.rotation.x=Math.PI/2;
+ mesh.position.z=z;
+ parent.add(mesh);
+ return mesh;
+}
+
+// Rear collar: central thorax side (-Z)
+const rear = new THREE.Group();
+rear.position.z=-0.88;
+neck.add(rear);
+
+cylinderZ(rear,0.43,0.48,0.28,darkMetal,0);
+cylinderZ(rear,0.40,0.40,0.09,chrome,-0.17);
+cylinderZ(rear,0.29,0.29,0.12,titanium,-0.25);
+cylinderZ(rear,0.21,0.21,0.12,opal,-0.31);
+
+// Front collar: head side (+Z)
+const front = new THREE.Group();
+front.position.z=0.88;
+neck.add(front);
+
+cylinderZ(front,0.39,0.44,0.28,darkMetal,0);
+cylinderZ(front,0.37,0.37,0.09,chrome,0.17);
+cylinderZ(front,0.27,0.27,0.12,titanium,0.25);
+cylinderZ(front,0.18,0.18,0.10,opal,0.32);
+
+// Main flexible mechanical spine
+const spine = new THREE.Mesh(
+ new THREE.CylinderGeometry(0.29,0.36,1.35,12),
+ darkMetal
+);
+spine.rotation.x=Math.PI/2;
+neck.add(spine);
+
+// Inner spine shaft
+const shaft = new THREE.Mesh(
+ new THREE.CylinderGeometry(0.16,0.19,1.25,12),
+ chrome
+);
+shaft.rotation.x=Math.PI/2;
+neck.add(shaft);
+
+// Central energy core
+const core = new THREE.Mesh(
+ new THREE.OctahedronGeometry(0.28,1),opal
+);
+core.position.z=0;
+core.scale.set(1,0.8,1.3);
+neck.add(core);
+
+// Articulated bearing rings
+const bearingGroups=[];
+for(let i=0;i<3;i++){
+ const z=-0.43+i*0.43;
+ const group=new THREE.Group();
+ group.position.z=z;
+ neck.add(group);
+
+ const ring=new THREE.Mesh(
+  new THREE.TorusGeometry(0.34,0.065,12,48),
+  chrome
+ );
+ group.add(ring);
+
+ const innerRing=new THREE.Mesh(
+  new THREE.TorusGeometry(0.25,0.025,8,40),
+  new THREE.MeshStandardMaterial({
+   color:rainbow[i*2],
+   emissive:rainbow[i*2],
+   emissiveIntensity:2
+  })
+ );
+ group.add(innerRing);
+
+ bearingGroups.push(group);
+}
+
+// Structural armor fins
+for(const side of [-1,1]){
+ for(let i=0;i<3;i++){
+  const fin=new THREE.Mesh(
+   new THREE.BoxGeometry(0.13,0.43,0.46),
+   titanium
+  );
+  fin.position.set(side*0.34,0,-0.42+i*0.42);
+  fin.rotation.z=side*0.22;
+  neck.add(fin);
+
+  const trim=new THREE.Mesh(
+   new THREE.BoxGeometry(0.035,0.29,0.30),
+   darkMetal
+  );
+  trim.position.set(side*0.415,0,-0.42+i*0.42);
+  neck.add(trim);
+ }
+}
+
+// Rainbow energy conduits along both sides
+const conduits=[];
+for(let side of [-1,1]){
+ for(let i=0;i<3;i++){
+  const x=side*(0.22+i*0.045);
+  const curve=new THREE.CatmullRomCurve3([
+   new THREE.Vector3(x,0.20,-0.85),
+   new THREE.Vector3(x*1.25,0.30,-0.40),
+   new THREE.Vector3(x*1.25,0.30,0.35),
+   new THREE.Vector3(x,0.20,0.85)
+  ]);
+
+  const tube=new THREE.Mesh(
+   new THREE.TubeGeometry(curve,32,0.022,7,false),
+   new THREE.MeshStandardMaterial({
+    color:rainbow[i*2],
+    emissive:rainbow[i*2],
+    emissiveIntensity:2
+   })
+  );
+  neck.add(tube);
+  conduits.push(tube);
+ }
+}
+
+// Six decorative sensor nodes
+const nodes=[];
+for(let i=0;i<6;i++){
+ const node=new THREE.Mesh(
+  new THREE.SphereGeometry(0.075,12,10),
+  new THREE.MeshBasicMaterial({color:rainbow[i]})
+ );
+ const angle=i*Math.PI/3;
+ node.position.set(Math.cos(angle)*0.42,Math.sin(angle)*0.42,0);
+ neck.add(node);
+ nodes.push(node);
+}
+
+// Collar bolts
+for(const end of [-0.88,0.88]){
+ for(let i=0;i<8;i++){
+  const a=i*Math.PI/4;
+  const bolt=new THREE.Mesh(
+   new THREE.SphereGeometry(0.045,10,8),chrome
+  );
+  bolt.position.set(
+   Math.cos(a)*0.39,
+   Math.sin(a)*0.39,
+   end
+  );
+  neck.add(bolt);
+ }
+}
+
+// Floating stars
+const positions=[];
+for(let i=0;i<450;i++){
+ positions.push(
+  (Math.random()-0.5)*22,
+  (Math.random()-0.5)*16,
+  (Math.random()-0.5)*22
+ );
+}
+const stars=new THREE.BufferGeometry();
+stars.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+scene.add(new THREE.Points(
+ stars,new THREE.PointsMaterial({
+  color:0x9dbbff,size:0.025,transparent:true,opacity:0.8
+ })
+));
+
+// Animation
+const clock=new THREE.Clock();
+
+function animate(){
+ requestAnimationFrame(animate);
+ const t=clock.getElapsedTime();
+
+ core.rotation.y=t*0.7;
+ core.rotation.x=Math.sin(t)*0.2;
+
+ bearingGroups.forEach((g,i)=>{
+  g.rotation.z=Math.sin(t*1.3+i)*0.08;
+  g.rotation.y=t*(i%2===0?0.25:-0.25);
+ });
+
+ nodes.forEach((n,i)=>{
+  n.scale.setScalar(0.8+Math.sin(t*3+i)*0.2);
+ });
+
+ controls.update();
+ renderer.render(scene,camera);
+}
+animate();
+
+addEventListener('resize',()=>{
+ camera.aspect=innerWidth/innerHeight;
+ camera.updateProjectionMatrix();
+ renderer.setSize(innerWidth,innerHeight);
+});
+</script>
+</body>
+</html>
